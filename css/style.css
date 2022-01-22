@@ -10,6 +10,9 @@
 	--accent-color-a: #bd5fe3;
 	--accent-color-b: #a34ec7;
 
+	--red: #e5447d;
+	--green: #4ebb58;
+
 	--font-family: noto sans;
 	--page-width: 640px;
 }
@@ -18,11 +21,39 @@ html {
 	color: var(--text-color-a);
 	background-color: var(--background-color-a);
 	font-family: var(--font-family);
+
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 body {
 	position: relative;
 	overflow: overlay;
+	margin: 0;
+}
+
+* {
+	font-family: noto sans;
+}
+
+p, li, h2 {
+	font-size: 1rem;
+	font-weight: normal;
+}
+
+h1 {
+	font-size: 1.25rem;
+	font-weight: bold;
+}
+
+.box {
+	background-color: var(--background-color-c);
+	padding: 20px;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.box p, .box h2 {
 	margin: 0;
 }
 
@@ -62,6 +93,10 @@ header #page-title {
 	margin: 0;
 }
 
+/* #endregion */
+
+/* #region SEARCH */
+
 header #search-bar {
 	display: flex;
 	gap: 10px;
@@ -81,6 +116,52 @@ header #search-bar {
 	border: none;
 	outline: none;
 	font-family: var(--font-family);
+}
+
+#search-results {
+	position: fixed;
+	top: 50px;
+	width: calc(var(--page-width) - 40px);
+	padding: 20px;
+	background-color: var(--background-color-a);
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	/*box-shadow: 0 0 5px 5px var(--background-color-a);*/
+}
+
+.search-result {
+	width: 100%;
+}
+
+.subreddit-toggle-button {
+	float: right;
+	width: 1.5rem;
+	height: 1.5rem;
+	border: none;
+	border-radius: 5px;
+	outline: none;
+	color: var(--text-color-a);
+	background-color: var(--background-color-a);
+	transition: background-color 200ms ease-in-out;
+	cursor: pointer;
+}
+
+.subreddit-toggle-button:hover {
+	background-color: var(--green);
+}
+
+.subreddit-toggle-button:before {
+	content: "\f067";
+	font-family: "Font Awesome 6 Free";
+	font-weight: bold;
+}
+
+.subreddit-toggle-button.active:hover {
+	background-color: var(--red);
+}
+
+.subreddit-toggle-button.active:before {
+	content: "\f00d";
 }
 
 /* #endregion */
@@ -193,27 +274,9 @@ section#page-content {
 	font-size: 0.85rem;
 }
 
-/* #endregion */
-
-/* #region GENERAL STYLING */
-
-.box {
-	background-color: var(--background-color-c);
-	padding: 20px;
+.post-media {
 	border-radius: 10px;
-	overflow: hidden;
-}
-
-.box p {
-	margin: 0;
-}
-
-p, li {
-	font-size: 1rem;
-}
-
-h1 {
-	font-size: 1.25rem;
+	box-shadow: 0 0 5px 0px var(--background-color-a);
 }
 
 /* #endregion */

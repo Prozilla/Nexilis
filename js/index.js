@@ -1,3 +1,4 @@
+// Feed
 let currentSubreddits = [
 	"all",
 ];
@@ -16,17 +17,20 @@ let currentFeed = {
 	filterIndex: null,
 };
 
+// Element references
 let postsList;
 let filterList;
 let subredditList;
+let searchInput
+let searchResultList;
 
-const limit = 50;
+// Meta settings
 let url;
 let renderingPosts = false;
 
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
-	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json?limit=${limit}`;
+	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
 
 	if (renderingPosts)
 		renderingPosts = false;
@@ -44,8 +48,8 @@ function renderPosts() {
 		});
 	}
 
-	fetch(url).then(function(res) {
-			return res.json();
+	fetch(url).then(function(result) {
+			return result.json();
 		}).then(async function(result) {
 			const posts = result.data.children;
 			renderingPosts = true;
@@ -115,8 +119,8 @@ function renderPosts() {
 					}
 				}
 
-				if (post.over_18)
-					continue;
+				//if (post.over_18)
+				//	continue;
 
 				const div = document.createElement("div");
 				div.innerHTML = `<div class="post box">
@@ -132,8 +136,8 @@ function renderPosts() {
 			}
 
 			renderingPosts = false;
-		}).catch(function(err) {
-			console.log(err);
+		}).catch(function(error) {
+			console.log(error);
 			renderingPosts = false;
 		});
 }
@@ -142,9 +146,16 @@ $(document).ready(function () {
 	postsList = document.querySelector("#posts-list");
 	filterList = document.querySelector("#filter-list");
 	subredditList = document.querySelector("#subreddits-list ul");
+	searchInput = document.querySelector("#search-bar input");
+	searchResultList = document.querySelector("#search-results");
 
 	setFilter(1);
 	updateSubredditList();
+
+	getSubreddit();
+	searchInput.addEventListener("input", function (event) {
+		getSubreddit(event.target.value);
+	});
 });
 
 function updateFeed() {
@@ -176,34 +187,73 @@ async function updateSubredditList() {
 		if (!oldSubreddits.includes(currentSubreddits[i])) {
 			// Get icon
 			let subredditIcon;
-			await fetch(`https://www.reddit.com/r/${currentSubreddits[i]}/about.json`).then(function(res) {
-				return res.json();
-			}).then(function(res) {
-				subredditIcon = `<img class="subreddit-icon" src="${res.data.icon_img ? res.data.icon_img : res.data.community_icon}" loading="lazy">`;
-			}).catch(function(err) {
-				if (currentSubreddits[i] == "all") {
-					subredditIcon = "<img class=\"subreddit-icon\" src=\"media/logo.png\">";
-				} else {
-					console.log(err);
-				}
-			});;
+			if (currentSubreddits[i] == "all") {
+				subredditIcon = "<img class=\"subreddit-icon\" src=\"media/logo.png\">";
+			} else {
+				await fetch(`https://www.reddit.com/r/${currentSubreddits[i]}/about.json`).then(function(result) {
+					return result.json();
+				}).then(function(result) {
+					subredditIcon = `<img class="subreddit-icon" src="${result.data.icon_img ? result.data.icon_img : result.data.community_icon}" loading="lazy">`;
+				}).catch(function(error) {
+					console.log(error);
+				});
+			}
 
-			subredditList.innerHTML += `<li>${subredditIcon} r/${currentSubreddits[i]}</li>`;
+			subredditList.innerHTML += `<li>${subredditIcon} r/${currentSubreddits[i]} <button class="subreddit-toggle-button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
 		}
 
 	// Remove subreddits
 	for (let i = 0; i < oldSubreddits.length; i++)
-		if (!currentSubreddits.includes(oldSubreddits))
+		if (!currentSubreddits.includes(oldSubreddits[i]))
 			subredditList.removeChild(subredditList.children[i]);
+
+	updateSubredditButtons();
+}
+
+function updateSubredditButtons() {
+	document.querySelectorAll(".subreddit-toggle-button").forEach(button => {
+		if (currentSubreddits.includes(button.getAttribute("onclick").replace("toggleSubreddit('", "").replace("')", ""))) {
+			button.classList.add("active");
+		} else if (button.classList.contains("active")) {
+			button.classList.remove("active");
+		}
+	});
 }
 
 function toggleSubreddit(subreddit) {
-	if (currentSubreddits.contains(subreddit)) {
-		currentSubreddits.splice(currentSubreddits.indexOf(subreddit), 1); // Remove subreddit from list of current subreddits
+	if (currentSubreddits.includes(subreddit)) {
+		// Remove subreddit from list of current subreddits
+		currentSubreddits.splice(currentSubreddits.indexOf(subreddit), 1);
 	} else {
-		currentSubreddits.add(subreddit);
+		currentSubreddits.push(subreddit);
 	}
 
 	updateSubredditList();
 	updateFeed();
+}
+
+async function getSubreddit(name) {
+	const searchUrl = `https://www.reddit.com/subreddits/search.json?q=${name}`;
+
+	if (!name) {
+		searchResultList.innerHTML = "";
+		searchResultList.style.display = "none";
+	} else {
+		await fetch(searchUrl).then(function(result) {
+			return result.json();
+		}).then(function(result) {			
+			if (searchInput.value != name)
+				return searchResultList.style.display = "none";
+
+			const searchResults = result.data.children.slice(0, 15);
+
+			searchResultList.innerHTML = searchResults.map(element => 
+				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
+			).join("");
+		});
+
+		searchResultList.style.display = null;
+	}
+
+	updateSubredditButtons();
 }
