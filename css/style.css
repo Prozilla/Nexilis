@@ -102,11 +102,12 @@ section#page-content {
 #filter-list div {
 	padding: 5px 10px;
 	border-radius: 10px;
+	text-align: center;
 	transition: background-color 200ms ease-in-out;
 	cursor: pointer;
 }
 
-#filter-list div:hover {
+#filter-list div:hover, #filter-list div:active {
 	background-color: var(--background-color-a);
 }
 
