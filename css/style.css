@@ -1,10 +1,11 @@
 :root {
-	--text-color-a: #fff;
+	--text-color-a: rgb(255 255 255);
 	--text-color-b: rgb(175, 175, 175);
 	--text-color-c: rgb(130 130 130);
 
-	--background-color-a: #0c0c0c;
-	--background-color-b: #1A1A1B;
+	--background-color-a: rgb(12 12 12);
+	--background-color-b: rgb(20 20 20);
+	--background-color-c: rgb(28 28 28);
 
 	--accent-color-a: #bd5fe3;
 	--accent-color-b: #a34ec7;
@@ -25,6 +26,8 @@ body {
 	margin: 0;
 }
 
+/* #region HEADER */
+
 header {
 	position: fixed;
 	display: flex;
@@ -35,7 +38,7 @@ header {
 	height: 50px;
 	top: 0;
 	box-sizing: border-box;
-	background-color: var(--background-color-b);
+	background-color: var(--background-color-c);
 	box-shadow: 0 0 5px 5px var(--background-color-a);
 	z-index: 1;
 }
@@ -72,13 +75,15 @@ header #search-bar {
 
 #search-bar input {
 	margin: 0;
-	width: 125px;
+	width: 100%;
 	color: var(--text-color-a);
 	background: none;
 	border: none;
 	outline: none;
 	font-family: var(--font-family);
 }
+
+/* #endregion */
 
 section#page-content {
 	margin-top: 50px;
@@ -90,6 +95,8 @@ section#page-content {
 	width: 100%;
     box-sizing: border-box;
 }
+
+/* #region FILTERS */
 
 #filter-list {
 	padding: 15px 20px;
@@ -107,7 +114,10 @@ section#page-content {
 	cursor: pointer;
 }
 
-#filter-list div:hover, #filter-list div:active {
+#filter-list div:hover {
+	background-color: var(--background-color-b);
+}
+#filter-list div.active {
 	background-color: var(--background-color-a);
 }
 
@@ -115,33 +125,55 @@ section#page-content {
 	margin-right: 5px;
 }
 
-#posts-list {
-	max-width: var(--page-width);
-	flex: 0 0 var(--page-width);
+/* #endregion */
+
+/* #region SIDE MENU */
+
+#posts-list, #side-menu > div {
+	display: flex;
+	flex-direction: column;
+	gap: 30px;
 }
 
 #side-menu {
 	flex: 0 0 calc(var(--page-width) / 2);
 }
 
-#side-menu div {
+#side-menu > div {
 	position: sticky;
 	top: 70px;
 }
 
-/* #region POSTS */
+#subreddits-list {
+	display: block;
+}
 
-#posts-list, #side-menu div {
+#subreddits-list ul {
 	display: flex;
 	flex-direction: column;
-	gap: 15px;
+	gap: 10px;
+	padding-left: 0;
+	margin-bottom: 0;
+	list-style-type: none;
+}
+
+.subreddit-icon {
+	height: 2rem !important;
+}
+
+/* #endregion */
+
+/* #region POSTS */
+
+#posts-list {
+	max-width: var(--page-width);
+	flex: 0 0 var(--page-width);
 }
 
 .post {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	max-height: 640px;
 }
 
 .post-header, .post-footer {
@@ -149,11 +181,11 @@ section#page-content {
 	font-size: 0.85rem;
 }
 
-.post-subreddit-icon {
+.post-subreddit-icon, .subreddit-icon {
 	border-radius: 50%;
 	height: 1.25rem;
 	margin-right: 7.5px;
-	vertical-align: bottom;
+	vertical-align: middle;
 }
 
 .post-description {
@@ -161,15 +193,12 @@ section#page-content {
 	font-size: 0.85rem;
 }
 
-.post-media {
-	object-fit: contain;
-	height: 80.5%;
-}
-
 /* #endregion */
 
+/* #region GENERAL STYLING */
+
 .box {
-	background-color: var(--background-color-b);
+	background-color: var(--background-color-c);
 	padding: 20px;
 	border-radius: 10px;
 	overflow: hidden;
@@ -179,13 +208,15 @@ section#page-content {
 	margin: 0;
 }
 
-p {
+p, li {
 	font-size: 1rem;
 }
 
 h1 {
 	font-size: 1.25rem;
 }
+
+/* #endregion */
 
 /* #region RESPONSIVE */
 
@@ -201,6 +232,10 @@ h1 {
 
 	#side-menu {
 		display: none;
+	}
+
+	#filter-list {
+		gap: 5px;
 	}
 	
 	#posts-list {
@@ -227,7 +262,7 @@ h1 {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--background-color-b);
+    background-color: var(--background-color-c);
     border-radius: 10px;
     border: 5px solid transparent;
     background-clip: padding-box;

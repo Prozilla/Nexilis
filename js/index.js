@@ -1,25 +1,38 @@
-const subreddit = "all";
-const limit = 50;
+let currentSubreddits = [
+	"all",
+];
 
-let currentFilterIndex = 1;
+let currentFilterIndex;
 const filters = [
 	"best",
 	"hot",
 	"new",
 	"top",
 	"rising",
-]
+];
+
+let currentFeed = {
+	subreddits: null,
+	filterIndex: null,
+};
 
 let postsList;
+let filterList;
+let subredditList;
+
+const limit = 50;
 let url;
 let renderingPosts = false;
 
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
-	url = `https://www.reddit.com/r/${subreddit}/${filters[currentFilterIndex]}.json?limit=${limit}`;
+	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json?limit=${limit}`;
 
 	if (renderingPosts)
 		renderingPosts = false;
+
+	currentFeed.subreddits = currentSubreddits;
+	currentFeed.filterIndex = currentFilterIndex;
 
 	// Remove old posts
 	if (postsList.children.length > 1) {
@@ -31,11 +44,9 @@ function renderPosts() {
 		});
 	}
 
-	fetch(url)
-		.then(function(res) {
+	fetch(url).then(function(res) {
 			return res.json();
-		})
-		.then(async function(result) {
+		}).then(async function(result) {
 			const posts = result.data.children;
 			renderingPosts = true;
 
@@ -121,8 +132,7 @@ function renderPosts() {
 			}
 
 			renderingPosts = false;
-		})
-		.catch(function(err) {
+		}).catch(function(err) {
 			console.log(err);
 			renderingPosts = false;
 		});
@@ -130,12 +140,70 @@ function renderPosts() {
 
 $(document).ready(function () {
 	postsList = document.querySelector("#posts-list");
-	renderPosts();
+	filterList = document.querySelector("#filter-list");
+	subredditList = document.querySelector("#subreddits-list ul");
+
+	setFilter(1);
+	updateSubredditList();
 });
 
-function setFilter(index) {
-	if (index != currentFilterIndex) {
-		currentFilterIndex = index;
+function updateFeed() {
+	if (currentFeed != {subreddits: currentSubreddits, filterIndex: currentFilterIndex})
 		renderPosts();
+}
+
+function setFilter(index) {
+	for (let i = 0; i < filterList.children.length; i++) {
+		if (i == index) {
+			filterList.children[i].classList.add("active");
+		} else if (filterList.children[i].classList.contains("active")) {
+			filterList.children[i].classList.remove("active");
+		}
 	}
+
+	currentFilterIndex = index;
+	updateFeed();
+}
+
+async function updateSubredditList() {
+	const oldSubreddits = []
+	Array.from(subredditList.children).forEach(child => {
+		oldSubreddits.push(child.textContent.trim().replace("r/", ""));
+	});
+
+	// Add missing subreddits
+	for (let i = 0; i < currentSubreddits.length; i++)
+		if (!oldSubreddits.includes(currentSubreddits[i])) {
+			// Get icon
+			let subredditIcon;
+			await fetch(`https://www.reddit.com/r/${currentSubreddits[i]}/about.json`).then(function(res) {
+				return res.json();
+			}).then(function(res) {
+				subredditIcon = `<img class="subreddit-icon" src="${res.data.icon_img ? res.data.icon_img : res.data.community_icon}" loading="lazy">`;
+			}).catch(function(err) {
+				if (currentSubreddits[i] == "all") {
+					subredditIcon = "<img class=\"subreddit-icon\" src=\"media/logo.png\">";
+				} else {
+					console.log(err);
+				}
+			});;
+
+			subredditList.innerHTML += `<li>${subredditIcon} r/${currentSubreddits[i]}</li>`;
+		}
+
+	// Remove subreddits
+	for (let i = 0; i < oldSubreddits.length; i++)
+		if (!currentSubreddits.includes(oldSubreddits))
+			subredditList.removeChild(subredditList.children[i]);
+}
+
+function toggleSubreddit(subreddit) {
+	if (currentSubreddits.contains(subreddit)) {
+		currentSubreddits.splice(currentSubreddits.indexOf(subreddit), 1); // Remove subreddit from list of current subreddits
+	} else {
+		currentSubreddits.add(subreddit);
+	}
+
+	updateSubredditList();
+	updateFeed();
 }
