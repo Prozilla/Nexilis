@@ -1,6 +1,7 @@
 :root {
 	--text-color-a: #fff;
-	--text-color-b: rgb(130 130 130);
+	--text-color-b: rgb(175, 175, 175);
+	--text-color-c: rgb(130 130 130);
 
 	--background-color-a: #0c0c0c;
 	--background-color-b: #1A1A1B;
@@ -35,6 +36,8 @@ header {
 	top: 0;
 	box-sizing: border-box;
 	background-color: var(--background-color-b);
+	box-shadow: 0 0 5px 5px var(--background-color-a);
+	z-index: 1;
 }
 
 header #logo {
@@ -88,6 +91,29 @@ section#page-content {
     box-sizing: border-box;
 }
 
+#filter-list {
+	padding: 15px 20px;
+	display: flex;
+	flex-direction: row;
+	gap: 15px;
+	justify-content: space-evenly;
+}
+
+#filter-list div {
+	padding: 5px 10px;
+	border-radius: 10px;
+	transition: background-color 200ms ease-in-out;
+	cursor: pointer;
+}
+
+#filter-list div:hover {
+	background-color: var(--background-color-a);
+}
+
+#filter-list div i {
+	margin-right: 5px;
+}
+
 #posts-list {
 	max-width: var(--page-width);
 	flex: 0 0 var(--page-width);
@@ -97,9 +123,14 @@ section#page-content {
 	flex: 0 0 calc(var(--page-width) / 2);
 }
 
+#side-menu div {
+	position: sticky;
+	top: 70px;
+}
+
 /* #region POSTS */
 
-#posts-list, #side-menu {
+#posts-list, #side-menu div {
 	display: flex;
 	flex-direction: column;
 	gap: 15px;
@@ -109,10 +140,11 @@ section#page-content {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
+	max-height: 640px;
 }
 
 .post-header, .post-footer {
-	color: var(--text-color-b);
+	color: var(--text-color-c);
 	font-size: 0.85rem;
 }
 
@@ -123,12 +155,23 @@ section#page-content {
 	vertical-align: bottom;
 }
 
+.post-description {
+	color: var(--text-color-b);
+	font-size: 0.85rem;
+}
+
+.post-media {
+	object-fit: contain;
+	height: 80.5%;
+}
+
 /* #endregion */
 
 .box {
 	background-color: var(--background-color-b);
 	padding: 20px;
 	border-radius: 10px;
+	overflow: hidden;
 }
 
 .box p {
