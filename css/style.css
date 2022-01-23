@@ -277,6 +277,12 @@ section#page-content {
 .post-media {
 	border-radius: 10px;
 	box-shadow: 0 0 5px 0px var(--background-color-a);
+	width: 100%;
+	height: auto;
+}
+
+.empty-feed-warning {
+	text-align: center;
 }
 
 /* #endregion */

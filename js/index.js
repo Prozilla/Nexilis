@@ -28,12 +28,16 @@ let searchResultList;
 let url;
 let feedId = 0;
 
+function addPost(html) {
+	const div = document.createElement("div");
+	div.innerHTML = html;
+
+	postsList.appendChild(div.firstChild);
+}
+
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
 	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
-
-	if (!currentSubreddits.length)
-		return;
 
 	currentFeed.subreddits = currentSubreddits;
 	currentFeed.filterIndex = currentFilterIndex;
@@ -48,12 +52,19 @@ function renderPosts() {
 		});
 	}
 
+	if (!currentSubreddits.length)
+		return addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+
 	feedId++;
 
 	fetch(url).then(function(result) {
 			return result.json();
 		}).then(async function(result) {
 			const posts = result.data.children;
+
+			if (!posts.length) {
+				addPost("<p>There doesn't seem to be anything here.</p>");
+			}
 
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
@@ -123,18 +134,13 @@ function renderPosts() {
 				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
 					break;
 
-				const div = document.createElement("div");
-
-				div.innerHTML = `<div data-feed-id="${feedId}" class="post box">
+				addPost(`<div data-feed-id="${feedId}" class="post box">
 					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
 					<p class="post-title">${title}</p>
 					${description}
 					${media}
 					<p class="post-footer">${upvotes} points &middot; ${comments} comments &middot; ${crossposts} crossposts</p>
-				</div>`;
-
-				// Add to list
-				postsList.appendChild(div.firstChild);
+				</div>`);
 			}
 		}).catch(function(error) {
 			console.log(error);
