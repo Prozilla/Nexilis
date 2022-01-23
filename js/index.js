@@ -23,6 +23,12 @@ let filterList;
 let subredditList;
 let searchInput
 let searchResultList;
+let sideMenu;
+let pageContent;
+let header;
+let feedName;
+let subredditOptions;
+let customFeedsList;
 
 // Meta settings
 let url;
@@ -35,12 +41,32 @@ function addPost(html) {
 	postsList.appendChild(div.firstChild);
 }
 
+function storeCurrentFeed() {
+	localStorage.setItem("currentFeed", JSON.stringify(currentFeed));
+}
+
+function loadCurrentFeed() {
+	const feed = JSON.parse(localStorage.getItem("currentFeed"));
+
+	if (feed != null) {
+		currentFeed = feed;
+		currentSubreddits = currentFeed.subreddits;
+		currentFilterIndex = currentFeed.filterIndex;
+
+		return true;
+	} else {
+		return false;
+	}
+}
+
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
 	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
 
 	currentFeed.subreddits = currentSubreddits;
 	currentFeed.filterIndex = currentFilterIndex;
+
+	storeCurrentFeed();
 
 	// Remove old posts
 	if (postsList.children.length > 1) {
@@ -153,22 +179,47 @@ $(document).ready(function () {
 	subredditList = document.querySelector("#subreddits-list ul");
 	searchInput = document.querySelector("#search-bar input");
 	searchResultList = document.querySelector("#search-results");
+	sideMenu = document.querySelector("#side-menu");
+	pageContent = document.querySelector("#page-content");
+	header = document.querySelector("header");
+	feedName = document.querySelector("#feed-name");
+	subredditOptions = document.querySelector("#subreddit-options");
+	customFeedsList = document.querySelector("#feeds-list");
 
-	setFilter(1);
+	feedName.disabled = true;
+
+	// Set up feed
+	if (loadCurrentFeed()) {
+		setFilter(currentFilterIndex);
+	} else {
+		setFilter(1);
+	}
 	updateSubredditList();
 
+	// Set up input events
 	getSubreddit();
 	searchInput.addEventListener("input", function (event) {
 		getSubreddit(event.target.value);
 	});
 
+	$(document).keypress(function(event) {
+		if (event.which == 13 && feedName.classList.contains("active"))
+			saveFeed();
+	});
+
+	// Set up click events
 	document.addEventListener("click", event => {
-		if (event.target != searchResultList && 
-			(!event.target.parentElement || event.target.parentElement != searchResultList) && 
-			((!event.target.parentElement.parentElement || event.target.parentElement.parentElement != searchResultList))) 
-		{
+		if (!header.contains(event.target) || event.target.id == "side-menu-toggle")
 			getSubreddit();
-		}
+
+		if (!sideMenu.contains(event.target) && event.target.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
+			toggleSideMenu();
+
+		if (!subredditOptions.contains(event.target) && feedName.classList.contains("active"))
+			hideFeedName();
+
+		if (!subredditOptions.contains(event.target) && !customFeedsList.contains(event.target) && customFeedsList.classList.contains("active"))
+			customFeedsList.classList.remove("active");
 	});
 
 	document.querySelector("#search-bar").addEventListener("click", function (event) {
@@ -217,7 +268,7 @@ async function updateSubredditList() {
 				});
 			}
 
-			subredditList.innerHTML += `<li>${subredditIcon} r/${currentSubreddits[i]} <button class="subreddit-toggle-button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
+			subredditList.innerHTML += `<li>${subredditIcon} r/${currentSubreddits[i]} <button class="subreddit-toggle-button button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
 		}
 
 	// Remove subreddits
@@ -269,7 +320,7 @@ async function getSubreddit(name) {
 			const searchResults = result.data.children.slice(0, 15);
 
 			searchResultList.innerHTML = searchResults.map(element => 
-				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
+				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
 			).join("");
 		});
 
@@ -277,4 +328,67 @@ async function getSubreddit(name) {
 	}
 
 	updateSubredditButtons();
+}
+
+function toggleSideMenu() {
+	if (!sideMenu.classList.contains("active")) {
+		sideMenu.classList.add("active");
+
+		postsList.style.filter = "blur(5px)";
+		postsList.style.pointerEvents = "none";
+		document.body.style.overflow = "hidden";
+	} else {
+		sideMenu.classList.remove("active");
+
+		postsList.style.filter = null;
+		postsList.style.pointerEvents = null;
+		document.body.style.overflow = null;
+	}
+}
+
+function saveFeed() {
+	const customFeeds = localStorage.getItem("customFeeds") ? JSON.parse(localStorage.getItem("customFeeds")) : {};
+	customFeeds[feedName.value] = currentFeed;
+
+	localStorage.setItem("customFeeds", JSON.stringify(customFeeds));
+	hideFeedName();
+}
+
+function loadFeed(name) {
+	const customFeeds = localStorage.getItem("customFeeds") ? JSON.parse(localStorage.getItem("customFeeds")) : null;
+
+	if (!name || !customFeeds || !customFeeds[name])
+		return;
+
+	currentSubreddits = customFeeds[name].subreddits;
+	currentFilterIndex = customFeeds[name].filterIndex;
+
+	setFilter(currentFilterIndex);
+	updateSubredditList();
+}
+
+function showFeedName() {
+	feedName.classList.add("active");
+	feedName.disabled = false;
+	feedName.focus();
+	feedName.select();
+}
+
+function hideFeedName() {
+	feedName.classList.remove("active");
+	feedName.disabled = true;
+}
+
+function showCustomFeedList() {
+	const customFeeds = localStorage.getItem("customFeeds") ? JSON.parse(localStorage.getItem("customFeeds")) : null;
+
+	if (customFeeds) {
+		customFeedsList.classList.add("active");
+
+		console.log(customFeeds["test"]);
+
+		customFeedsList.children[0].innerHTML = Object.keys(customFeeds).map(key => 
+			`<li>${key} (${customFeeds[key].subreddits.length})<button class="feed-load-button button" onclick="loadFeed('${key}')"></li>`
+		).join("");
+	}
 }

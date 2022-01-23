@@ -30,11 +30,11 @@
 		<!-- search -->
 		<div id="search-bar">
 			<i class="fas fa-search"></i>
-			<input type="text" placeholder="Search Spreddit"></input>
-			<div id="search-results">
-				
-			</div>
+			<input class="input" type="text" placeholder="Search Spreddit">
+			<div id="search-results"></div>
 		</div>
+
+		<i id="side-menu-toggle" class="fas fa-bars" onclick="toggleSideMenu()"></i>
 	</header>
 
 	<!-- page -->
@@ -65,10 +65,17 @@
 			<div>
 				<div id="subreddits-list" class="box">
 					<h2>Current subspreddits</h2>
-					<ul>
-					</ul>
+					<ul></ul>
+					<div id="subreddit-options">
+						<button class="button" onclick="showFeedName()">Save feed</button>
+						<button class="button" onclick="showCustomFeedList()">Open feed</button>
+						<input id="feed-name" class="input" type="text" placeholder="Enter a feed name">
+					</div>
 				</div>
-				<div class="about box">
+				<div id="feeds-list" class="box">
+					<ul></ul>
+				</div>
+				<div class="box">
 					<h2>About</h2>
 					<p class="description">This is a Reddit clone made by Prozilla</p>
 				</div>
