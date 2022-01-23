@@ -126,7 +126,10 @@ header #search-bar {
 	background-color: var(--background-color-a);
 	border-bottom-left-radius: 10px;
 	border-bottom-right-radius: 10px;
-	/*box-shadow: 0 0 5px 5px var(--background-color-a);*/
+}
+
+#search-results:empty {
+	padding: 0;
 }
 
 .search-result {
@@ -303,12 +306,22 @@ section#page-content {
 		width: 50%;
 	}
 
-	#side-menu {
-		display: none;
+	#search-results {
+		width: 100%;
+		left: 0;
+		box-sizing: border-box;
 	}
 
 	#filter-list {
 		gap: 5px;
+	}
+
+	#filter-list div i {
+		margin-right: 0;
+	}
+
+	#side-menu {
+		display: none;
 	}
 	
 	#posts-list {
