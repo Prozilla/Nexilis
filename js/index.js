@@ -138,7 +138,7 @@ function renderPosts() {
 					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
 					<p class="post-title">${title}</p>
 					${description}
-					${media}
+					${media ? media : ""}
 					<p class="post-footer">${upvotes} points &middot; ${comments} comments &middot; ${crossposts} crossposts</p>
 				</div>`);
 			}
@@ -161,6 +161,19 @@ $(document).ready(function () {
 	searchInput.addEventListener("input", function (event) {
 		getSubreddit(event.target.value);
 	});
+
+	document.addEventListener("click", event => {
+		if (event.target != searchResultList && 
+			(!event.target.parentElement || event.target.parentElement != searchResultList) && 
+			((!event.target.parentElement.parentElement || event.target.parentElement.parentElement != searchResultList))) 
+		{
+			getSubreddit();
+		}
+	});
+
+	document.querySelector("#search-bar").addEventListener("click", function (event) {
+		getSubreddit(searchInput.value);
+	})
 });
 
 function updateFeed() {

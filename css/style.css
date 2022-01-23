@@ -276,7 +276,7 @@ section#page-content {
 	vertical-align: middle;
 }
 
-.post-description {
+.post-description, .description {
 	color: var(--text-color-b);
 	font-size: 0.85rem;
 }
