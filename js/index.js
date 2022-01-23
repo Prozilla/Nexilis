@@ -212,6 +212,9 @@ async function updateSubredditList() {
 		if (!currentSubreddits.includes(oldSubreddits[i]))
 			subredditList.removeChild(subredditList.children[i]);
 
+	if (!currentSubreddits.length)
+		subredditList.textContent = null;
+
 	updateSubredditButtons();
 }
 

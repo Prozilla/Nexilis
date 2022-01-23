@@ -238,6 +238,10 @@ section#page-content {
 	list-style-type: none;
 }
 
+#subreddits-list ul:empty {
+	display: none;
+}
+
 .subreddit-icon {
 	height: 2rem !important;
 }
