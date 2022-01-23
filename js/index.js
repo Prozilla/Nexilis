@@ -26,14 +26,14 @@ let searchResultList;
 
 // Meta settings
 let url;
-let renderingPosts = false;
+let feedId = 0;
 
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
 	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
 
-	if (renderingPosts)
-		renderingPosts = false;
+	if (!currentSubreddits.length)
+		return;
 
 	currentFeed.subreddits = currentSubreddits;
 	currentFeed.filterIndex = currentFilterIndex;
@@ -48,17 +48,15 @@ function renderPosts() {
 		});
 	}
 
+	feedId++;
+
 	fetch(url).then(function(result) {
 			return result.json();
 		}).then(async function(result) {
 			const posts = result.data.children;
-			renderingPosts = true;
 
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
-
-				if (!renderingPosts)
-					break;
 
 				//console.log(post);
 
@@ -119,11 +117,15 @@ function renderPosts() {
 					}
 				}
 
-				//if (post.over_18)
-				//	continue;
+				if (post.over_18)
+					continue;
+
+				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
+					break;
 
 				const div = document.createElement("div");
-				div.innerHTML = `<div class="post box">
+
+				div.innerHTML = `<div data-feed-id="${feedId}" class="post box">
 					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
 					<p class="post-title">${title}</p>
 					${description}
@@ -134,11 +136,8 @@ function renderPosts() {
 				// Add to list
 				postsList.appendChild(div.firstChild);
 			}
-
-			renderingPosts = false;
 		}).catch(function(error) {
 			console.log(error);
-			renderingPosts = false;
 		});
 }
 

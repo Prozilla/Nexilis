@@ -71,7 +71,7 @@ header {
 	box-sizing: border-box;
 	background-color: var(--background-color-c);
 	box-shadow: 0 0 5px 5px var(--background-color-a);
-	z-index: 1;
+	z-index: 9;
 }
 
 header #logo {
@@ -161,7 +161,7 @@ header #search-bar {
 }
 
 .subreddit-toggle-button.active:before {
-	content: "\f00d";
+	content: "\f068";
 }
 
 /* #endregion */
