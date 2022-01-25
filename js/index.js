@@ -63,6 +63,34 @@ function loadCurrentFeed() {
 	}
 }
 
+function getTimePassedSinceDate(unixDate) {
+	const date = Math.abs((new Date(unixDate * 1000).getTime() / 1000).toFixed(0));
+	const currentDate = Math.abs((new Date().getTime() / 1000).toFixed(0));
+
+	const timePassed = currentDate - date;
+
+	const years = Math.floor(timePassed / 30758400);
+	const days = Math.floor(timePassed / 86400);
+	const hours = Math.floor(timePassed / 3600) % 24;
+	const minutes = Math.floor(timePassed / 60) % 60;
+	const seconds = timePassed % 60;
+
+	let time;
+	if (years > 0) {
+		time = years > 1 ? years + " years" : years + " year";
+	} else if (days > 0) {
+		time = days > 1 ? days + " days" : days + " day";
+	} else if (hours > 0) {
+		time = hours > 1 ? hours + " hours" : hours + " hour";
+	} else if (minutes > 0) {
+		time = minutes > 1 ? minutes + " minutes" : minutes + " minute";
+	} else {
+		time = seconds > 1 ? seconds + " seconds" : seconds + " second";
+	}
+
+	return time;
+}
+
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
 	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
@@ -117,29 +145,7 @@ function renderPosts() {
 				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
 				// Get date
-				const postDate = Math.abs((new Date(post.created * 1000).getTime() / 1000).toFixed(0));
-				const currentDate = Math.abs((new Date().getTime() / 1000).toFixed(0));
-
-				const timePassed = currentDate - postDate;
-
-				const years = Math.floor(timePassed / 30758400);
-				const days = Math.floor(timePassed / 86400);
-				const hours = Math.floor(timePassed / 3600) % 24;
-				const minutes = Math.floor(timePassed / 60) % 60;
-				const seconds = timePassed % 60;
-
-				let date;
-				if (years > 0) {
-					date = years > 1 ? years + " years" : years + " year";
-				} else if (days > 0) {
-					date = days > 1 ? days + " days" : days + " day";
-				} else if (hours > 0) {
-					date = hours > 1 ? hours + " hours" : hours + " hour";
-				} else if (minutes > 0) {
-					date = minutes > 1 ? minutes + " minutes" : minutes + " minute";
-				} else {
-					date = seconds > 1 ? seconds + " seconds" : seconds + " second";
-				}
+				const date = getTimePassedSinceDate(post.created);
 
 				// Get media
 				let media;
@@ -410,20 +416,29 @@ function showCustomFeedList() {
 
 function renderComment(comment) {
 	const replies = comment.data.replies ? Array.from(comment.data.replies.data.children) : null;
-	let thread;
+	console.log(comment);
+
+	let icon = "media/logo.png";
+	// await?
+	fetch(`https://www.reddit.com/user/${comment.data.author}/about.json`).then(function(result) {
+		return result.json();
+	}).then(function(result) {
+		icon = result.data.icon_img;
+	});
+	
+	let thread = `<span class="comment" style="margin-left: ${comment.data.depth * 25}px;">
+		<p class="comment-header"><img src="${icon}" loading="lazy"> ${comment.data.author} &middot; ${getTimePassedSinceDate(comment.data.created)} ago</p>
+		<p class="comment-body">${comment.data.body}</p>
+	</span>`;
 
 	if (replies) {
-		for (let i = 0; i < replies.length; i++) {
+		for (let i = 0; i < replies.length; i++)
 			replies[i] = renderComment(replies[i]);
-		}
 
-		thread = `
-			<p class="comment" style="margin-left: ${comment.data.depth * 25}px;">${comment.data.body}<p/>
-			${replies}
-		`;
-	} else {
-		thread = `<p class="comment" style="margin-left: ${comment.data.depth * 25}px;">${comment.data.body}<p/>`;
+		thread += replies.join("");
 	}
+
+	console.log(comment.data.depth, thread);
 
 	return thread;
 }
@@ -514,9 +529,6 @@ function showPostViewer(id) {
 			div.innerHTML = threadHtml;
 
 			postViewer.firstChild.appendChild(div);
-			const commentList = Array.from(postViewer.firstChild.lastChild.children);
-
-			$(postViewer.firstChild.lastChild).children(":not(.comment)").remove();
 		}
 	});
 
