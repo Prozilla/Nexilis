@@ -46,6 +46,13 @@ h1 {
 	font-weight: bold;
 }
 
+span {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+
 .box {
 	background-color: var(--background-color-c);
 	padding: 20px;
@@ -197,7 +204,7 @@ header #search-bar {
 
 /* #endregion */
 
-section#page-content {
+#page-content {
 	margin-top: 50px;
 	padding: 20px;
 	display: flex;
@@ -354,8 +361,43 @@ section#page-content {
 	max-height: 75vh;
 }
 
+.post-footer p i {
+	font-size: 1rem;
+	margin: 0 5px;
+}
+
 .empty-feed-warning {
 	text-align: center;
+}
+
+/* #endregion */
+
+/* #region POST VIEWER */
+
+#post-viewer {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+}
+
+#post-viewer.active {
+	display: block;
+}
+
+#post-viewer .post {
+	width: var(--page-width);
+	margin: 65px auto 20px auto;
+	box-shadow: 0 0 5px 5px var(--background-color-a);
+}
+
+#post-viewer .post div {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
 }
 
 /* #endregion */

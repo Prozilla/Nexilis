@@ -1,3 +1,6 @@
+// Reddit API documentation
+// https://www.reddit.com/dev/api/
+
 // Feed
 let currentSubreddits = [
 	"all",
@@ -29,6 +32,7 @@ let header;
 let feedName;
 let subredditOptions;
 let customFeedsList;
+let postViewer;
 
 // Meta settings
 let url;
@@ -95,8 +99,6 @@ function renderPosts() {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				//console.log(post);
-
 				let subredditIcon;
 				await fetch(`https://www.reddit.com/r/${post.subreddit}/about.json`).then(function(res) {
 					return res.json();
@@ -108,6 +110,7 @@ function renderPosts() {
 				const author = "u/" + post.author;
 				const title = post.title;
 				const description = `<p class="post-description">${post.selftext}</p>`;
+				const id = post.id;
 
 				const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
 				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
@@ -160,12 +163,12 @@ function renderPosts() {
 				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
 					break;
 
-				addPost(`<div data-feed-id="${feedId}" class="post box">
+				addPost(`<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
 					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
 					<p class="post-title">${title}</p>
 					${description}
 					${media ? media : ""}
-					<p class="post-footer">${upvotes} points &middot; ${comments} comments &middot; ${crossposts} crossposts</p>
+					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
 				</div>`);
 			}
 		}).catch(function(error) {
@@ -185,6 +188,7 @@ $(document).ready(function () {
 	feedName = document.querySelector("#feed-name");
 	subredditOptions = document.querySelector("#subreddit-options");
 	customFeedsList = document.querySelector("#feeds-list");
+	postViewer = document.querySelector("#post-viewer");
 
 	feedName.disabled = true;
 
@@ -220,6 +224,17 @@ $(document).ready(function () {
 
 		if (!subredditOptions.contains(event.target) && !customFeedsList.contains(event.target) && customFeedsList.classList.contains("active"))
 			customFeedsList.classList.remove("active");
+
+		if (!postViewer.firstChild?.contains(event.target) && postViewer.classList.contains("active")) {
+			hidePostViewer();
+		} else if (postsList.contains(event.target)) {
+			let element = event.target;
+			while(element && !$(element).attr("data-post-id") && typeof $(element).attr("data-post-id") == "undefined") {
+				element = element.parentNode;
+			}
+			if (element)
+				showPostViewer(element.getAttribute("data-post-id"));
+		} 
 	});
 
 	document.querySelector("#search-bar").addEventListener("click", function (event) {
@@ -391,4 +406,140 @@ function showCustomFeedList() {
 			`<li>${key} (${customFeeds[key].subreddits.length})<button class="feed-load-button button" onclick="loadFeed('${key}')"></li>`
 		).join("");
 	}
+}
+
+function renderComment(comment) {
+	const replies = comment.data.replies ? Array.from(comment.data.replies.data.children) : null;
+	let thread;
+
+	if (replies) {
+		for (let i = 0; i < replies.length; i++) {
+			replies[i] = renderComment(replies[i]);
+		}
+
+		thread = `
+			<p class="comment" style="margin-left: ${comment.data.depth * 25}px;">${comment.data.body}<p/>
+			${replies}
+		`;
+	} else {
+		thread = `<p class="comment" style="margin-left: ${comment.data.depth * 25}px;">${comment.data.body}<p/>`;
+	}
+
+	return thread;
+}
+
+function showPostViewer(id) {
+	// Load post
+	fetch(`https://www.reddit.com/comments/${id}/.json`).then(function(result) {
+		return result.json();
+	}).then(async function(result) {
+		const post = result[0].data.children[0].data;
+		const threads = result[1].data.children;
+
+		let subredditIcon;
+		await fetch(`https://www.reddit.com/r/${post.subreddit}/about.json`).then(function(res) {
+			return res.json();
+		}).then(function(res) {
+			subredditIcon = `<img class="post-subreddit-icon" src="${res.data.icon_img ? res.data.icon_img : res.data.community_icon}" loading="lazy">`;
+		});
+
+		const subRedditName = post.subreddit_name_prefixed;
+		const author = "u/" + post.author;
+		const title = post.title;
+		const description = `<p class="post-description">${post.selftext}</p>`;
+		const id = post.id;
+
+		const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
+		const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
+		const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
+
+		// Get date
+		const postDate = Math.abs((new Date(post.created * 1000).getTime() / 1000).toFixed(0));
+		const currentDate = Math.abs((new Date().getTime() / 1000).toFixed(0));
+
+		const timePassed = currentDate - postDate;
+
+		const years = Math.floor(timePassed / 30758400);
+		const days = Math.floor(timePassed / 86400);
+		const hours = Math.floor(timePassed / 3600) % 24;
+		const minutes = Math.floor(timePassed / 60) % 60;
+		const seconds = timePassed % 60;
+
+		let date;
+		if (years > 0) {
+			date = years > 1 ? years + " years" : years + " year";
+		} else if (days > 0) {
+			date = days > 1 ? days + " days" : days + " day";
+		} else if (hours > 0) {
+			date = hours > 1 ? hours + " hours" : hours + " hour";
+		} else if (minutes > 0) {
+			date = minutes > 1 ? minutes + " minutes" : minutes + " minute";
+		} else {
+			date = seconds > 1 ? seconds + " seconds" : seconds + " second";
+		}
+
+		// Get media
+		let media;
+		if (post.media) {
+			if (post.media.reddit_video) {
+				media = `<video class="post-media" controls autoplay><source src=\"${post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)}" type="video/mp4"></video>`;
+			} else if (post.media.oembed) {
+				media = `<img class="post-media" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
+			}
+		} else if (post.preview) {
+			if (post.preview.images[0].variants.gif) {
+				media = `<img class="post-media" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
+			} else {
+				media = `<img class="post-media" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
+			}
+		}
+
+		postViewer.innerHTML = `<div class="post box">
+			<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
+			<p class="post-title">${title}</p>
+			${description}
+			${media ? media : ""}
+			<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
+		</div>`;
+
+		let threadHtml = [];
+		if (threads.length) {
+			threads.forEach(comment => {
+				threadHtml.push(renderComment(comment));
+			});
+
+			threadHtml = threadHtml.join("").replace(/\\n\\t\\t\\t/g, "");
+
+			const div = document.createElement("div");
+			div.innerHTML = threadHtml;
+
+			postViewer.firstChild.appendChild(div);
+			const commentList = Array.from(postViewer.firstChild.lastChild.children);
+
+			$(postViewer.firstChild.lastChild).children(":not(.comment)").remove();
+		}
+	});
+
+	// Show post
+	postViewer.classList.add("active");
+
+	postsList.style.filter = "blur(5px)";
+	postsList.style.pointerEvents = "none";
+
+	sideMenu.style.filter = "blur(5px)";
+	sideMenu.style.pointerEvents = "none";
+
+	document.body.style.overflow = "hidden";
+}
+
+function hidePostViewer() {
+	postViewer.classList.remove("active");
+
+	postsList.style.filter = null;
+	postsList.style.pointerEvents = null;
+
+	sideMenu.style.filter = null;
+	sideMenu.style.pointerEvents = null;
+
+	document.body.style.overflow = null;
 }
