@@ -102,6 +102,7 @@ let feedId = 0;
 			const audioSource = source.replace(new RegExp("DASH_[0-9]+.mp4"), "DASH_audio.mp4");
 			const audioResponse = await fetch(audioSource);
 			let audio = "";
+
 			if (audioResponse.status == 200)
 				audio = `<audio controls>
 					<source src=\"${audioSource}" type="audio/mp4">
@@ -138,6 +139,7 @@ function addPost(html) {
 	postsList.querySelectorAll("video.post-media").forEach(video => {
 		const audio = video.querySelector("audio");
 		video.onplay = function() {
+			audio.currentTime = video.currentTime;
 			audio.play();
 		}
 		video.onpause = function() {
@@ -281,7 +283,7 @@ $(document).ready(function () {
 
 
 
-//#region UPDATING UI
+//#region UPDATING POSTS
 
 /**
  * Render posts of the curren feed and update the list of posts
@@ -341,8 +343,8 @@ function renderPosts() {
 				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
-				if (post.over_18)
-					continue;
+				// if (post.over_18)
+				// 	continue;
 
 				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
 					break;
@@ -504,7 +506,7 @@ function hidePostViewer() {
 
 
 
-//#region UPDATE
+//#region UPDATE FEED
 
 /**
  * Updates list that displayes the subreddits of the current feed
