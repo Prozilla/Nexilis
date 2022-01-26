@@ -43,6 +43,16 @@ function addPost(html) {
 	div.innerHTML = html;
 
 	postsList.appendChild(div.firstChild);
+
+	postsList.querySelectorAll("video.post-media").forEach(video => {
+		const audio = video.querySelector("audio");
+		video.onplay = function() {
+			audio.play();
+		}
+		video.onpause = function() {
+			audio.pause();
+		}
+	});
 }
 
 function storeCurrentFeed() {
@@ -98,7 +108,13 @@ function getPostMedia(post) {
 	let media;
 	if (post.media) {
 		if (post.media.reddit_video) {
-			media = `<video class="post-media" controls autoplay><source src=\"${post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)}" type="video/mp4"></video>`;
+			const source = post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16);
+			media = `<video class="post-media" controls autoplay>
+				<source src=\"${source}" type="video/mp4">
+				<audio controls>
+					<source src=\"${source.replace(new RegExp("DASH_[0-9]+.mp4"), "DASH_audio.mp4")}" type="audio/mp4">
+				</audio>
+			</video>`;
 		} else if (post.media.oembed) {
 			media = `<img class="post-media" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
 		}
@@ -250,7 +266,7 @@ $(document).ready(function () {
 
 	document.querySelector("#search-bar").addEventListener("click", function (event) {
 		getSubreddit(searchInput.value);
-	})
+	});
 });
 
 function updateFeed() {
