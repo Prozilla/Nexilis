@@ -91,6 +91,28 @@ function getTimePassedSinceDate(unixDate) {
 	return time;
 }
 
+function getPostMedia(post) {
+	if (post.crosspost_parent_list)
+		post = post.crosspost_parent_list[0];
+
+	let media;
+	if (post.media) {
+		if (post.media.reddit_video) {
+			media = `<video class="post-media" controls autoplay><source src=\"${post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)}" type="video/mp4"></video>`;
+		} else if (post.media.oembed) {
+			media = `<img class="post-media" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
+		}
+	} else if (post.preview) {
+		if (post.preview.images[0].variants.gif) {
+			media = `<img class="post-media" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
+		} else {
+			media = `<img class="post-media" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
+		}
+	}
+
+	return media ? media : "";
+}
+
 function renderPosts() {
 	const proxy = "https://cors-anywhere.herokuapp.com/";
 	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
@@ -127,6 +149,8 @@ function renderPosts() {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
+				console.log(post);
+
 				let subredditIcon;
 				await fetch(`https://www.reddit.com/r/${post.subreddit}/about.json`).then(function(res) {
 					return res.json();
@@ -144,25 +168,6 @@ function renderPosts() {
 				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
-				// Get date
-				const date = getTimePassedSinceDate(post.created);
-
-				// Get media
-				let media;
-				if (post.media) {
-					if (post.media.reddit_video) {
-						media = `<video class="post-media" controls autoplay><source src=\"${post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)}" type="video/mp4"></video>`;
-					} else if (post.media.oembed) {
-						media = `<img class="post-media" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
-					}
-				} else if (post.preview) {
-					if (post.preview.images[0].variants.gif) {
-						media = `<img class="post-media" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
-					} else {
-						media = `<img class="post-media" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
-					}
-				}
-
 				if (post.over_18)
 					continue;
 
@@ -170,10 +175,10 @@ function renderPosts() {
 					break;
 
 				addPost(`<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
-					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
+					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
 					<p class="post-title">${title}</p>
 					${description}
-					${media ? media : ""}
+					${getPostMedia(post)}
 					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
 				</div>`);
 			}
@@ -233,11 +238,11 @@ $(document).ready(function () {
 
 		if (!postViewer.firstChild?.contains(event.target) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (postsList.contains(event.target)) {
+		} else if (postsList.contains(event.target) && event.target.nodeName != "VIDEO") {
 			let element = event.target;
-			while(element && !$(element).attr("data-post-id") && typeof $(element).attr("data-post-id") == "undefined") {
+			while(element && !$(element).attr("data-post-id") && typeof $(element).attr("data-post-id") == "undefined")
 				element = element.parentNode;
-			}
+
 			if (element)
 				showPostViewer(element.getAttribute("data-post-id"));
 		} 
@@ -414,16 +419,14 @@ function showCustomFeedList() {
 	}
 }
 
-function renderComment(comment) {
+async function renderComment(comment) {
 	const replies = comment.data.replies ? Array.from(comment.data.replies.data.children) : null;
-	console.log(comment);
+	if (comment.kind == "more") {
+		// Do somethig
+	}
 
-	let icon = "media/logo.png";
-	// await?
-	fetch(`https://www.reddit.com/user/${comment.data.author}/about.json`).then(function(result) {
-		return result.json();
-	}).then(function(result) {
-		icon = result.data.icon_img;
+	const icon = await fetch(`https://www.reddit.com/user/${comment.data.author}/about.json`).then((result) => result.json()).then(result => {
+		return result.data.icon_img;
 	});
 	
 	let thread = `<span class="comment" style="margin-left: ${comment.data.depth * 25}px;">
@@ -433,17 +436,17 @@ function renderComment(comment) {
 
 	if (replies) {
 		for (let i = 0; i < replies.length; i++)
-			replies[i] = renderComment(replies[i]);
+			replies[i] = await renderComment(replies[i]);
 
 		thread += replies.join("");
 	}
-
-	console.log(comment.data.depth, thread);
 
 	return thread;
 }
 
 function showPostViewer(id) {
+	postViewer.setAttribute("data-post-id", id);
+
 	// Load post
 	fetch(`https://www.reddit.com/comments/${id}/.json`).then(function(result) {
 		return result.json();
@@ -468,67 +471,31 @@ function showPostViewer(id) {
 		const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 		const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
-		// Get date
-		const postDate = Math.abs((new Date(post.created * 1000).getTime() / 1000).toFixed(0));
-		const currentDate = Math.abs((new Date().getTime() / 1000).toFixed(0));
-
-		const timePassed = currentDate - postDate;
-
-		const years = Math.floor(timePassed / 30758400);
-		const days = Math.floor(timePassed / 86400);
-		const hours = Math.floor(timePassed / 3600) % 24;
-		const minutes = Math.floor(timePassed / 60) % 60;
-		const seconds = timePassed % 60;
-
-		let date;
-		if (years > 0) {
-			date = years > 1 ? years + " years" : years + " year";
-		} else if (days > 0) {
-			date = days > 1 ? days + " days" : days + " day";
-		} else if (hours > 0) {
-			date = hours > 1 ? hours + " hours" : hours + " hour";
-		} else if (minutes > 0) {
-			date = minutes > 1 ? minutes + " minutes" : minutes + " minute";
-		} else {
-			date = seconds > 1 ? seconds + " seconds" : seconds + " second";
-		}
-
-		// Get media
-		let media;
-		if (post.media) {
-			if (post.media.reddit_video) {
-				media = `<video class="post-media" controls autoplay><source src=\"${post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)}" type="video/mp4"></video>`;
-			} else if (post.media.oembed) {
-				media = `<img class="post-media" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
-			}
-		} else if (post.preview) {
-			if (post.preview.images[0].variants.gif) {
-				media = `<img class="post-media" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
-			} else {
-				media = `<img class="post-media" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
-			}
-		}
-
 		postViewer.innerHTML = `<div class="post box">
-			<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${date} ago</p>
+			<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
 			<p class="post-title">${title}</p>
 			${description}
-			${media ? media : ""}
+			${getPostMedia(post)}
 			<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
+			<p id="loading-comments">Loading comments...</p>
 		</div>`;
 
-		let threadHtml = [];
 		if (threads.length) {
-			threads.forEach(comment => {
-				threadHtml.push(renderComment(comment));
-			});
+			for (let i = 0; i < threads.length; i++) {
+				const comment = await renderComment(threads[i]);
 
-			threadHtml = threadHtml.join("").replace(/\\n\\t\\t\\t/g, "");
+				if (postViewer.getAttribute("data-post-id") != id)
+					return;
+				
+				comment.replace(/\\n\\t\\t\\t/g, "");
 
-			const div = document.createElement("div");
-			div.innerHTML = threadHtml;
+				const div = document.createElement("div");
+				div.innerHTML = comment;
 
-			postViewer.firstChild.appendChild(div);
+				if (i == 0)
+					postViewer.firstChild.querySelector("#loading-comments").remove();
+				postViewer.firstChild.appendChild(div);
+			}
 		}
 	});
 
