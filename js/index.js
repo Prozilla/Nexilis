@@ -188,7 +188,7 @@ async function getSubredditIcon(subreddit) {
 
 //#region EVENTS
 
-$(document).ready(function () {
+function loadPage() {
 	// Get elements
 	postsList = document.querySelector("#posts-list");
 	filterList = document.querySelector("#filter-list");
@@ -219,8 +219,8 @@ $(document).ready(function () {
 		getSubreddit(event.target.value);
 	});
 
-	$(document).keypress(function(event) {
-		if (event.which == 13 && feedName.classList.contains("active"))
+	window.addEventListener("keydown", function(event) {
+		if (event.code == "Enter" && feedName.classList.contains("active"))
 			saveFeed();
 	});
 
@@ -242,7 +242,7 @@ $(document).ready(function () {
 			hidePostViewer();
 		} else if (postsList.contains(event.target) && event.target.nodeName != "VIDEO") {
 			let element = event.target;
-			while(element && !$(element).attr("data-post-id") && typeof $(element).attr("data-post-id") == "undefined")
+			while(element && !element.getAttribute("data-post-id"))
 				element = element.parentNode;
 
 			if (element)
@@ -254,7 +254,7 @@ $(document).ready(function () {
 	document.querySelector("#search-bar").addEventListener("click", function (event) {
 		getSubreddit(searchInput.value);
 	});
-});
+}
 
 //#endregion
 
@@ -321,15 +321,12 @@ function renderPosts() {
 			return result.json();
 		}).then(async function(result) {
 			const posts = result.data.children;
-			console.log(url);
 
 			if (!posts.length)
 				addPost("<p>There doesn't seem to be anything here.</p>");
 
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
-
-				console.log(post);
 
 				const subRedditName = post.subreddit_name_prefixed;
 				const author = "u/" + post.author;
@@ -604,8 +601,8 @@ function loadFeed(name) {
 //#region SCROLLING
 
 document.addEventListener("scroll", function(event) {
-	const lastPostTop = $("#posts-list > div:last-child").offset().top;
-	const screenBottom = $(window).scrollTop() + $(window).innerHeight();
+	const lastPostTop = document.querySelector("#posts-list > div:last-child").getBoundingClientRect().top;
+	const screenBottom = window.innerHeight;
 
 	// Check if the last post is visible
 	if (screenBottom > lastPostTop && !loadingNewPosts) {
@@ -692,3 +689,5 @@ function hideFeedName() {
 }
 
 //#endregion
+
+loadPage();

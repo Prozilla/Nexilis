@@ -13,7 +13,7 @@
 	--red: #e5447d;
 	--green: #4ebb58;
 
-	--font-family: noto sans;
+	--font-family: noto sans, Sans-serif;
 	--page-width: 640px;
 }
 
@@ -33,7 +33,7 @@ body {
 }
 
 * {
-	font-family: noto sans;
+	font-family: var(--font-family);
 }
 
 p, li, h2, button, input {
