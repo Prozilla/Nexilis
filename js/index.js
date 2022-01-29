@@ -42,8 +42,11 @@ let customFeedsList;
 let postViewer;
 
 // Meta settings
-let url;
 let feedId = 0;
+const maxPosts = 10;
+let postCount = 0;
+let lastPost;
+let loadingNewPosts = false;
 
 //#endregion
 
@@ -270,54 +273,63 @@ $(document).ready(function () {
 
 	postsList.querySelectorAll("video.post-media").forEach(video => {
 		const audio = video.querySelector("audio");
-		video.onplay = function() {
-			audio.currentTime = video.currentTime;
-			audio.play();
-		}
-		video.onpause = function() {
-			audio.pause();
+		if (audio) {
+			video.onplay = function() {
+				audio.currentTime = video.currentTime;
+				audio.play();
+			}
+			video.onpause = function() {
+				audio.pause();
+			}
 		}
 	});
 }
 
 /**
  * Render posts of the curren feed and update the list of posts
+ * TO DO: save rendered posts to avoid duplicate post in post list
  */
 function renderPosts() {
-	const proxy = "https://cors-anywhere.herokuapp.com/";
-	url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json`;
+	// Check if the feed has been changed
+	if (currentFeed.subreddits != currentSubreddits || currentFeed.filterIndex != currentFilterIndex) {
+		currentFeed.subreddits = currentSubreddits;
+		currentFeed.filterIndex = currentFilterIndex;
 
-	currentFeed.subreddits = currentSubreddits;
-	currentFeed.filterIndex = currentFilterIndex;
+		lastPost = null;
 
-	saveCurrentFeed();
+		// Remove old posts
+		if (postsList.children.length > 1) {
+			const oldPosts = Array.from(postsList.children);
+			oldPosts.splice(0, 1);
 
-	// Remove old posts
-	if (postsList.children.length > 1) {
-		const oldPosts = Array.from(postsList.children);
-		oldPosts.splice(0, 1);
+			oldPosts.forEach(child => {
+				postsList.removeChild(child);
+			});
+		}
 
-		oldPosts.forEach(child => {
-			postsList.removeChild(child);
-		});
+		saveCurrentFeed();
+
+		if (!currentSubreddits.length)
+			return addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+
+		feedId++;
 	}
 
-	if (!currentSubreddits.length)
-		return addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
-
-	feedId++;
+	const url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json?limit=${maxPosts}${lastPost ? "&after=" + lastPost : ""}`;
 
 	fetch(url).then(function(result) {
 			return result.json();
 		}).then(async function(result) {
 			const posts = result.data.children;
+			console.log(url);
 
-			if (!posts.length) {
+			if (!posts.length)
 				addPost("<p>There doesn't seem to be anything here.</p>");
-			}
 
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
+
+				console.log(post);
 
 				const subRedditName = post.subreddit_name_prefixed;
 				const author = "u/" + post.author;
@@ -342,6 +354,10 @@ function renderPosts() {
 					${await renderPostMedia(post)}
 					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
 				</div>`);
+
+				postCount++;
+				lastPost = "t3_" + post.id;
+				loadingNewPosts = false;
 			}
 		}).catch(function(error) {
 			console.log(error);
@@ -523,6 +539,8 @@ function showCustomFeedList() {
  * @param {number} index - Index of the new filter
  */
  function setFilter(index) {
+	// Should return if the user presses the current filter button
+
 	for (let i = 0; i < filterList.children.length; i++) {
 		if (i == index) {
 			filterList.children[i].classList.add("active");
@@ -579,6 +597,22 @@ function loadFeed(name) {
 	setFilter(currentFilterIndex);
 	updateSubredditList();
 }
+
+//#endregion
+
+
+//#region SCROLLING
+
+document.addEventListener("scroll", function(event) {
+	const lastPostTop = $("#posts-list > div:last-child").offset().top;
+	const screenBottom = $(window).scrollTop() + $(window).innerHeight();
+
+	// Check if the last post is visible
+	if (screenBottom > lastPostTop && !loadingNewPosts) {
+		renderPosts();
+		loadingNewPosts = true;
+	}
+});
 
 //#endregion
 
