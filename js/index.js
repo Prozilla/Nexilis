@@ -444,7 +444,7 @@ function hidePostViewer() {
 	// Add missing subreddits
 	for (let i = 0; i < currentSubreddits.length; i++)
 		if (!oldSubreddits.includes(currentSubreddits[i]))
-			subredditList.innerHTML += `<li>${getSubredditIcon(currentSubreddits[i])} r/${currentSubreddits[i]} <button class="subreddit-toggle-button button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
+			subredditList.innerHTML += `<li>${await getSubredditIcon(currentSubreddits[i])} r/${currentSubreddits[i]} <button class="subreddit-toggle-button button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
 
 	// Remove subreddits
 	for (let i = 0; i < oldSubreddits.length; i++)
