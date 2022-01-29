@@ -462,7 +462,7 @@ header #search-bar {
 		transform: translateX(0);
 	}
 
-	#side-menu div div {
+	#side-menu > div > div {
 		box-shadow: 0 0 5px 5px var(--background-color-a);
 	}
 	

@@ -185,9 +185,11 @@ function loadCurrentFeed() {
 	}
 
 	// Get user icon
-	const icon = await fetch(`https://www.reddit.com/user/${comment.data.author}/about.json`).then((result) => result.json()).then(result => {
-		return result.data.icon_img;
-	});
+	let icon = `https://www.redditstatic.com/avatars/defaults/v2/avatar_default_${Math.floor(Math.random() * 7)}.png`;
+	if (comment.data.author != "[deleted]")
+		icon = await fetch(`https://www.reddit.com/user/${comment.data.author}/about.json`).then((result) => result.json()).then(result => {
+			return result.data.icon_img;
+		});
 	
 	let thread = `<span class="comment" style="margin-left: ${comment.data.depth * 25}px;">
 		<p class="comment-header"><img src="${icon}" loading="lazy"> ${comment.data.author} &middot; ${getTimePassedSinceDate(comment.data.created)} ago</p>
@@ -324,7 +326,7 @@ function renderPosts() {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				console.log(post);
+				// console.log(post);
 
 				let subredditIcon;
 				await fetch(`https://www.reddit.com/r/${post.subreddit}/about.json`).then(function(res) {
