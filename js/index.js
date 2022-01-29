@@ -6,7 +6,6 @@
  */
 
 
-
 //#region VARIABLES
 
 // Feed settings
@@ -49,8 +48,7 @@ let feedId = 0;
 //#endregion
 
 
-
-//#region RETURNING FUNCTIONS
+//#region GET
 
 /**
  * Calculate the time passed since a unix date
@@ -89,7 +87,7 @@ let feedId = 0;
  * @param {Object} post - The post with the media that needs to be rendered
  * @returns {string} Post media in html format
  */
- async function renderPostMedia(post) {
+async function renderPostMedia(post) {
 	if (post.crosspost_parent_list)
 		post = post.crosspost_parent_list[0];
 
@@ -127,53 +125,6 @@ let feedId = 0;
 }
 
 /**
- * Adds a single post to the list of posts
- * @param {string} html - A post in html format
- */
-function addPost(html) {
-	const div = document.createElement("div");
-	div.innerHTML = html;
-
-	postsList.appendChild(div.firstChild);
-
-	postsList.querySelectorAll("video.post-media").forEach(video => {
-		const audio = video.querySelector("audio");
-		video.onplay = function() {
-			audio.currentTime = video.currentTime;
-			audio.play();
-		}
-		video.onpause = function() {
-			audio.pause();
-		}
-	});
-}
-
-/**
- * Saves the current feed to local storage
- */
-function saveCurrentFeed() {
-	localStorage.setItem("currentFeed", JSON.stringify(currentFeed));
-}
-
-/**
- * Loads the current feed from local storage
- * @returns {boolean} False if there was no saved feed
- */
-function loadCurrentFeed() {
-	const feed = JSON.parse(localStorage.getItem("currentFeed"));
-
-	if (feed != null) {
-		currentFeed = feed;
-		currentSubreddits = currentFeed.subreddits;
-		currentFilterIndex = currentFeed.filterIndex;
-
-		return true;
-	} else {
-		return false;
-	}
-}
-
-/**
  * Renders a recursively comment in html format
  * @param {Object} comment - The comment on top of the thread that needs to be rendered
  * @returns {string} Comment and its replies in html format
@@ -207,8 +158,29 @@ function loadCurrentFeed() {
 	return thread;
 }
 
-//#endregion
+/**
+ * Returns the icon of a subreddit or the default subreddit icon if there is none
+ * @param {string} subreddit - The name of the subreddit
+ * @returns {string} Subreddit icon in html format
+ */
+async function getSubredditIcon(subreddit) {
+	let subredditIcon = "<img class=\"subreddit-icon\" src=\"media/logo.png\">";
+	if (subreddit != "all") {
+		await fetch(`https://www.reddit.com/r/${subreddit}/about.json`).then(function(result) {
+			return result.json();
+		}).then(function(result) {
+			const source = result.data.icon_img ? result.data.icon_img : result.data.community_icon;
+			if (source)
+				subredditIcon = `<img class="subreddit-icon" src="${source}" loading="lazy">`;
+		}).catch(function(error) {
+			console.log(error);
+		});
+	}
 
+	return subredditIcon;
+}
+
+//#endregion
 
 
 //#region EVENTS
@@ -284,8 +256,29 @@ $(document).ready(function () {
 //#endregion
 
 
+//#region POSTS
 
-//#region UPDATING POSTS
+/**
+ * Adds a single post to the list of posts
+ * @param {string} html - A post in html format
+ */
+ function addPost(html) {
+	const div = document.createElement("div");
+	div.innerHTML = html;
+
+	postsList.appendChild(div.firstChild);
+
+	postsList.querySelectorAll("video.post-media").forEach(video => {
+		const audio = video.querySelector("audio");
+		video.onplay = function() {
+			audio.currentTime = video.currentTime;
+			audio.play();
+		}
+		video.onpause = function() {
+			audio.pause();
+		}
+	});
+}
 
 /**
  * Render posts of the curren feed and update the list of posts
@@ -326,15 +319,6 @@ function renderPosts() {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				// console.log(post);
-
-				let subredditIcon;
-				await fetch(`https://www.reddit.com/r/${post.subreddit}/about.json`).then(function(res) {
-					return res.json();
-				}).then(function(res) {
-					subredditIcon = `<img class="post-subreddit-icon" src="${res.data.icon_img ? res.data.icon_img : res.data.community_icon}" loading="lazy">`;
-				});
-
 				const subRedditName = post.subreddit_name_prefixed;
 				const author = "u/" + post.author;
 				const title = post.title;
@@ -352,7 +336,7 @@ function renderPosts() {
 					break;
 
 				addPost(`<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
-					<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
+					<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
 					<p class="post-title">${title}</p>
 					${description}
 					${await renderPostMedia(post)}
@@ -378,13 +362,6 @@ function renderPosts() {
 		const post = result[0].data.children[0].data;
 		const threads = result[1].data.children;
 
-		let subredditIcon;
-		await fetch(`https://www.reddit.com/r/${post.subreddit}/about.json`).then(function(res) {
-			return res.json();
-		}).then(function(res) {
-			subredditIcon = `<img class="post-subreddit-icon" src="${res.data.icon_img ? res.data.icon_img : res.data.community_icon}" loading="lazy">`;
-		});
-
 		const subRedditName = post.subreddit_name_prefixed;
 		const author = "u/" + post.author;
 		const title = post.title;
@@ -396,7 +373,7 @@ function renderPosts() {
 		const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
 		postViewer.innerHTML = `<div class="post box">
-			<p class="post-header">${subredditIcon}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
+			<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
 			<p class="post-title">${title}</p>
 			${description}
 			${await renderPostMedia(post)}
@@ -436,60 +413,6 @@ function renderPosts() {
 }
 
 /**
- * Used on mobile to toggle a menu overlay
- */
- function toggleSideMenu() {
-	if (!sideMenu.classList.contains("active")) {
-		sideMenu.classList.add("active");
-
-		postsList.style.filter = "blur(5px)";
-		postsList.style.pointerEvents = "none";
-		document.body.style.overflow = "hidden";
-	} else {
-		sideMenu.classList.remove("active");
-
-		postsList.style.filter = null;
-		postsList.style.pointerEvents = null;
-		document.body.style.overflow = null;
-	}
-}
-
-/**
- * Enables input field for custom feed name
- */
-function showFeedName() {
-	feedName.classList.add("active");
-	feedName.disabled = false;
-	feedName.focus();
-	feedName.select();
-}
-
-/**
- * Disables input field for custom feed name
- */
-function hideFeedName() {
-	feedName.classList.remove("active");
-	feedName.disabled = true;
-}
-
-/**
- * Enables to custom feed list to let the user load a new feed
- */
-function showCustomFeedList() {
-	const customFeeds = localStorage.getItem("customFeeds") ? JSON.parse(localStorage.getItem("customFeeds")) : null;
-
-	if (customFeeds) {
-		customFeedsList.classList.add("active");
-
-		console.log(customFeeds["test"]);
-
-		customFeedsList.children[0].innerHTML = Object.keys(customFeeds).map(key => 
-			`<li>${key} (${customFeeds[key].subreddits.length})<button class="feed-load-button button" onclick="loadFeed('${key}')"></li>`
-		).join("");
-	}
-}
-
-/**
  * Disables the post viewer
  */
 function hidePostViewer() {
@@ -507,8 +430,7 @@ function hidePostViewer() {
 //#endregion
 
 
-
-//#region UPDATE FEED
+//#region FEED
 
 /**
  * Updates list that displayes the subreddits of the current feed
@@ -521,23 +443,8 @@ function hidePostViewer() {
 
 	// Add missing subreddits
 	for (let i = 0; i < currentSubreddits.length; i++)
-		if (!oldSubreddits.includes(currentSubreddits[i])) {
-			// Get icon
-			let subredditIcon;
-			if (currentSubreddits[i] == "all") {
-				subredditIcon = "<img class=\"subreddit-icon\" src=\"media/logo.png\">";
-			} else {
-				await fetch(`https://www.reddit.com/r/${currentSubreddits[i]}/about.json`).then(function(result) {
-					return result.json();
-				}).then(function(result) {
-					subredditIcon = `<img class="subreddit-icon" src="${result.data.icon_img ? result.data.icon_img : result.data.community_icon}" loading="lazy">`;
-				}).catch(function(error) {
-					console.log(error);
-				});
-			}
-
-			subredditList.innerHTML += `<li>${subredditIcon} r/${currentSubreddits[i]} <button class="subreddit-toggle-button button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
-		}
+		if (!oldSubreddits.includes(currentSubreddits[i]))
+			subredditList.innerHTML += `<li>${getSubredditIcon(currentSubreddits[i])} r/${currentSubreddits[i]} <button class="subreddit-toggle-button button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
 
 	// Remove subreddits
 	for (let i = 0; i < oldSubreddits.length; i++)
@@ -559,6 +466,31 @@ function updateFeed() {
 }
 
 /**
+ * Saves the current feed to local storage
+ */
+ function saveCurrentFeed() {
+	localStorage.setItem("currentFeed", JSON.stringify(currentFeed));
+}
+
+/**
+ * Loads the current feed from local storage
+ * @returns {boolean} False if there was no saved feed
+ */
+function loadCurrentFeed() {
+	const feed = JSON.parse(localStorage.getItem("currentFeed"));
+
+	if (feed != null) {
+		currentFeed = feed;
+		currentSubreddits = currentFeed.subreddits;
+		currentFilterIndex = currentFeed.filterIndex;
+
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/**
  * Updates all toggle subreddit buttons
  */
 function updateSubredditButtons() {
@@ -571,53 +503,26 @@ function updateSubredditButtons() {
 	});
 }
 
-//#endregion
-
-
-
-//#region SEARCHING
-
 /**
- * Search for a subreddit name and update search results
- * @param {string} name - Name of the subreddit to search for
+ * Enables to custom feed list to let the user load a new feed
  */
- async function getSubreddit(name) {
-	const searchUrl = `https://www.reddit.com/subreddits/search.json?q=${name}`;
+function showCustomFeedList() {
+	const customFeeds = localStorage.getItem("customFeeds") ? JSON.parse(localStorage.getItem("customFeeds")) : null;
 
-	if (!name) {
-		searchResultList.innerHTML = "";
-		searchResultList.style.display = "none";
-	} else {
-		await fetch(searchUrl).then(function(result) {
-			return result.json();
-		}).then(function(result) {			
-			if (searchInput.value != name)
-				return searchResultList.style.display = "none";
+	if (customFeeds) {
+		customFeedsList.classList.add("active");
 
-			const searchResults = result.data.children.slice(0, 15);
-
-			searchResultList.innerHTML = searchResults.map(element => 
-				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
-			).join("");
-		});
-
-		searchResultList.style.display = null;
+		customFeedsList.children[0].innerHTML = Object.keys(customFeeds).map(key => 
+			`<li>${key} (${customFeeds[key].subreddits.length})<button class="feed-load-button button" onclick="loadFeed('${key}')"></li>`
+		).join("");
 	}
-
-	updateSubredditButtons();
 }
-
-//#endregion
-
-
-
-//#region UPDATING FEED
 
 /**
  * Changes the current filter and updates the list of posts
  * @param {number} index - Index of the new filter
  */
-function setFilter(index) {
+ function setFilter(index) {
 	for (let i = 0; i < filterList.children.length; i++) {
 		if (i == index) {
 			filterList.children[i].classList.add("active");
@@ -673,6 +578,83 @@ function loadFeed(name) {
 	// Update the list of posts and the list filters
 	setFilter(currentFilterIndex);
 	updateSubredditList();
+}
+
+//#endregion
+
+
+//#region SEARCHING
+
+/**
+ * Search for a subreddit name and update search results
+ * @param {string} name - Name of the subreddit to search for
+ */
+ async function getSubreddit(name) {
+	const searchUrl = `https://www.reddit.com/subreddits/search.json?q=${name}`;
+
+	if (!name) {
+		searchResultList.innerHTML = "";
+		searchResultList.style.display = "none";
+	} else {
+		await fetch(searchUrl).then(function(result) {
+			return result.json();
+		}).then(function(result) {			
+			if (searchInput.value != name)
+				return searchResultList.style.display = "none";
+
+			const searchResults = result.data.children.slice(0, 15);
+
+			searchResultList.innerHTML = searchResults.map(element => 
+				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
+			).join("");
+		});
+
+		searchResultList.style.display = null;
+	}
+
+	updateSubredditButtons();
+}
+
+//#endregion
+
+
+//#region SIDE MENU
+
+/**
+ * Used on mobile to toggle a menu overlay
+ */
+ function toggleSideMenu() {
+	if (!sideMenu.classList.contains("active")) {
+		sideMenu.classList.add("active");
+
+		postsList.style.filter = "blur(5px)";
+		postsList.style.pointerEvents = "none";
+		document.body.style.overflow = "hidden";
+	} else {
+		sideMenu.classList.remove("active");
+
+		postsList.style.filter = null;
+		postsList.style.pointerEvents = null;
+		document.body.style.overflow = null;
+	}
+}
+
+/**
+ * Enables input field for custom feed name
+ */
+function showFeedName() {
+	feedName.classList.add("active");
+	feedName.disabled = false;
+	feedName.focus();
+	feedName.select();
+}
+
+/**
+ * Disables input field for custom feed name
+ */
+function hideFeedName() {
+	feedName.classList.remove("active");
+	feedName.disabled = true;
 }
 
 //#endregion
