@@ -64,7 +64,7 @@ span {
 	margin: 0;
 }
 
-.box ul, .box span {
+.box > ul, .box > span {
 	margin-top: 1rem;
 }
 
@@ -395,7 +395,7 @@ header #search-bar {
 .post {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 1rem;
 }
 
 .post-header, .post-footer {
@@ -421,6 +421,10 @@ header #search-bar {
 	width: 100%;
 	height: auto;
 	max-height: 75vh;
+}
+
+.post-footer {
+	margin: 0 !important;
 }
 
 .post-footer p i {
@@ -464,6 +468,7 @@ header #search-bar {
 
 .comment {
 	flex-direction: column;
+	gap: 0.5rem;
 }
 
 .comment-header img {
@@ -471,6 +476,23 @@ header #search-bar {
 	height: 1.25rem;
 	vertical-align: bottom;
 	border-radius: 50%;
+	margin-right: 0.25rem;
+}
+
+.comment-body {
+	padding-left: 1.5rem;
+}
+
+#post-viewer .post div:before {
+	content: "";
+	height: 100%;
+}
+
+.comment-line {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	border-left: 2px var(--background-color-a);
 }
 
 /* #endregion */

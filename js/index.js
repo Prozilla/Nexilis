@@ -150,6 +150,8 @@ async function renderPostMedia(post) {
 		<p class="comment-body">${comment.data.body}</p>
 	</span>`;
 
+	// ${"<i class=\"comment-line\"></i>".repeat(comment.data.depth + 1)}
+
 	// Render replies recursively
 	if (replies) {
 		for (let i = 0; i < replies.length; i++)
@@ -331,7 +333,7 @@ function renderPosts() {
 				const subRedditName = post.subreddit_name_prefixed;
 				const author = "u/" + post.author;
 				const title = post.title;
-				const description = `<p class="post-description">${post.selftext}</p>`;
+				const description = post.selftext ? `<p class="post-description">${post.selftext}</p>` : "";
 				const id = post.id;
 
 				const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
@@ -449,7 +451,7 @@ function hidePostViewer() {
  * Updates list that displayes the subreddits of the current feed
  */
  async function updateSubredditList() {
-	const oldSubreddits = []
+	let oldSubreddits = [];
 	Array.from(subredditList.children).forEach(child => {
 		oldSubreddits.push(child.textContent.trim().replace("r/", ""));
 	});
@@ -460,9 +462,11 @@ function hidePostViewer() {
 			subredditList.innerHTML += `<li>${await getSubredditIcon(currentSubreddits[i])} r/${currentSubreddits[i]} <button class="subreddit-toggle-button button" onclick="toggleSubreddit('${currentSubreddits[i]}')"></button></li>`;
 
 	// Remove subreddits
-	for (let i = 0; i < oldSubreddits.length; i++)
-		if (!currentSubreddits.includes(oldSubreddits[i]))
+	for (let i = 0; i < subredditList.children.length; i++)
+		if (!currentSubreddits.includes(subredditList.children[i].textContent.trim().replace("r/", ""))) {
 			subredditList.removeChild(subredditList.children[i]);
+			i--; // Index decreases becaues child is removed
+		}
 
 	if (!currentSubreddits.length)
 		subredditList.textContent = null;
@@ -689,5 +693,6 @@ function hideFeedName() {
 }
 
 //#endregion
+
 
 loadPage();
