@@ -458,6 +458,7 @@ header #search-bar {
 	width: var(--page-width);
 	margin: 65px auto 20px auto;
 	box-shadow: 0 0 5px 5px var(--background-color-a);
+	box-sizing: border-box;
 }
 
 #post-viewer .post div {
@@ -553,6 +554,16 @@ header #search-bar {
 	#posts-list {
 		flex: none;
 		max-width: none;
+		width: 100%;
+	}
+
+	#post-viewer {
+		overflow: overlay;
+		padding: 0 20px;
+		box-sizing: border-box;
+	}
+
+	#post-viewer .post {
 		width: 100%;
 	}
 }
