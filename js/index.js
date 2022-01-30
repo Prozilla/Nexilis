@@ -5,7 +5,6 @@
  * Made by Prozilla
  */
 
-
 //#region VARIABLES
 
 // Feed settings
@@ -27,19 +26,25 @@ let currentFeed = {
 	filterIndex: null,
 };
 
-// Element references
-let postsList;
-let filterList;
-let subredditList;
-let searchInput
-let searchResultList;
-let sideMenu;
-let pageContent;
-let header;
-let feedName;
-let subredditOptions;
-let customFeedsList;
-let postViewer;
+// List elements
+const postsList = document.querySelector("#posts-list");
+const filterList = document.querySelector("#filter-list");
+const subredditList = document.querySelector("#subreddits-list ul");
+const searchResultList = document.querySelector("#search-results");
+const customFeedsList = document.querySelector("#feeds-list");
+
+// Input elements
+const searchInput = document.querySelector("#search-bar input");
+const sensitiveContentToggle = document.querySelector("#sensitive-content");
+
+const sideMenu = document.querySelector("#side-menu");
+const pageContent = document.querySelector("#page-content");
+const header = document.querySelector("header");
+const feedName = document.querySelector("#feed-name");
+const subredditOptions = document.querySelector("#subreddit-options");
+const postViewer = document.querySelector("#post-viewer");
+
+
 
 // Meta settings
 let feedId = 0;
@@ -47,9 +52,9 @@ const maxPosts = 10;
 let postCount = 0;
 let lastPost;
 let loadingNewPosts = false;
+let allowSensitiveContent = false;
 
 //#endregion
-
 
 //#region GET
 
@@ -185,27 +190,35 @@ async function getSubredditIcon(subreddit) {
 	return subredditIcon;
 }
 
+/**
+ * Compares two arrays
+ * @param {Array} array1 - First array
+ * @param {Array} array2 - Second array
+ * @returns Whether the two arrays are equal
+ */
+function arraysEqual(array1, array2) {
+	if (array1 === array2) 
+		return true;
+	if (array1 == null || array2 == null) 
+		return false;
+	if (array1.length !== array2.length) 
+		return false;
+
+	for (var i = 0; i < array1.length; ++i)
+		if (array1[i] !== array2[i]) 
+			return false;
+
+	return true;
+}
+
 //#endregion
 
+//#region SET UP
 
-//#region EVENTS
-
-function loadPage() {
-	// Get elements
-	postsList = document.querySelector("#posts-list");
-	filterList = document.querySelector("#filter-list");
-	subredditList = document.querySelector("#subreddits-list ul");
-	searchInput = document.querySelector("#search-bar input");
-	searchResultList = document.querySelector("#search-results");
-	sideMenu = document.querySelector("#side-menu");
-	pageContent = document.querySelector("#page-content");
-	header = document.querySelector("header");
-	feedName = document.querySelector("#feed-name");
-	subredditOptions = document.querySelector("#subreddit-options");
-	customFeedsList = document.querySelector("#feeds-list");
-	postViewer = document.querySelector("#post-viewer");
-
+function setUpPage() {
+	// Set element properties
 	feedName.disabled = true;
+	sensitiveContentToggle.checked = localStorage.getItem("allowSensitiveContent") ? localStorage.getItem("allowSensitiveContent") : false;
 
 	// Set up feed
 	if (loadCurrentFeed()) {
@@ -257,8 +270,9 @@ function loadPage() {
 	});
 }
 
-//#endregion
+setUpPage();
 
+//#endregion
 
 //#region POSTS
 
@@ -289,11 +303,12 @@ function loadPage() {
 /**
  * Render posts of the curren feed and update the list of posts
  * TO DO: save rendered posts to avoid duplicate post in post list
+ * @param {boolean} forceOverwrite - If set to true, it will remove old posts before loading new ones
  */
-function renderPosts() {
+function renderPosts(forceOverwrite) {
 	// Check if the feed has been changed
-	if (currentFeed.subreddits != currentSubreddits || currentFeed.filterIndex != currentFilterIndex) {
-		currentFeed.subreddits = currentSubreddits;
+	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex || forceOverwrite) {
+		currentFeed.subreddits = currentSubreddits.slice();
 		currentFeed.filterIndex = currentFilterIndex;
 
 		lastPost = null;
@@ -329,8 +344,6 @@ function renderPosts() {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				console.log(i, post);
-
 				// Skip duplicate posts
 				if (document.querySelector(`[data-post-id="${post.id}"]`) != null)
 					continue;
@@ -345,8 +358,8 @@ function renderPosts() {
 				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
-				// if (post.over_18)
-				// 	continue;
+				if (!allowSensitiveContent && post.over_18)
+					continue;
 
 				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
 					break;
@@ -450,7 +463,6 @@ function hidePostViewer() {
 
 //#endregion
 
-
 //#region FEED
 
 /**
@@ -484,7 +496,7 @@ function hidePostViewer() {
  * Updates the list of posts
  */
 function updateFeed() {
-	if (currentFeed.subreddits != currentSubreddits || currentFeed.filterIndex != currentFilterIndex)
+	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex)
 		renderPosts();
 }
 
@@ -504,7 +516,7 @@ function loadCurrentFeed() {
 
 	if (feed != null) {
 		currentFeed = feed;
-		currentSubreddits = currentFeed.subreddits;
+		currentSubreddits = currentFeed.subreddits.slice();
 		currentFilterIndex = currentFeed.filterIndex;
 
 		return true;
@@ -566,8 +578,7 @@ function showCustomFeedList() {
  */
 function toggleSubreddit(subreddit) {
 	if (currentSubreddits.includes(subreddit)) {
-		// Remove subreddit from list of current subreddits
-		currentSubreddits.splice(currentSubreddits.indexOf(subreddit), 1);
+		currentSubreddits.splice(currentSubreddits.indexOf(subreddit), 1); // Remove subreddit from list of current subreddits
 	} else {
 		currentSubreddits.push(subreddit);
 	}
@@ -607,7 +618,6 @@ function loadFeed(name) {
 
 //#endregion
 
-
 //#region SCROLLING
 
 document.addEventListener("scroll", function(event) {
@@ -623,7 +633,6 @@ document.addEventListener("scroll", function(event) {
 });
 
 //#endregion
-
 
 //#region SEARCHING
 
@@ -658,7 +667,6 @@ document.addEventListener("scroll", function(event) {
 }
 
 //#endregion
-
 
 //#region SIDE MENU
 
@@ -701,5 +709,12 @@ function hideFeedName() {
 
 //#endregion
 
+//#region OPTIONS
 
-loadPage();
+function toggleSensitiveContent() {
+	localStorage.setItem("allowSensitiveContent", sensitiveContentToggle.checked);
+	allowSensitiveContent = sensitiveContentToggle.checked;
+	renderPosts(true);
+}
+
+//#endregion

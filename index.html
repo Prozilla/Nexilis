@@ -66,6 +66,7 @@
 		<!-- side menu -->
 		<aside id="side-menu">
 			<div>
+				<!-- SUBREDDITS -->
 				<div id="subreddits-list" class="box">
 					<h2>Current feed</h2>
 					<ul></ul>
@@ -76,21 +77,28 @@
 					</div>
 				</div>
 
+				<!-- FEEDS -->
 				<div id="feeds-list" class="box">
 					<ul></ul>
 				</div>
 
-				<!--<div id="options-list" class="box">
-					<h2>Options</h2>
-					<span>
-						<i class="fas fa-volume-up"></i>
-						<input class="slider" type="range" min="0" max="100" value="100" class="slider" id="volume">
-					</span>
-				</div>-->
-
+				<!-- ABOUT -->
 				<div class="box">
 					<h2>About</h2>
 					<p class="description">This is a Reddit clone made by Prozilla</p>
+				</div>
+
+				<!-- OPTIONS -->
+				<div id="options-list" class="box">
+					<h2>Options</h2>
+					<span>
+						<i class="far fa-eye-slash"></i>
+						<p>Sensitive content</p>
+						<label class="switch">
+							<input id="sensitive-content" type="checkbox" onchange="toggleSensitiveContent()">
+							<span class="slider"></span>
+						</label>
+					</span>
 				</div>
 			</div>
 		</aside>
@@ -100,11 +108,6 @@
 
 		</div>
 	</main>
-
-	<!-- footer -->
-	<footer>
-
-	</footer>
 
 	<script src="js/index.js"></script>
 </body>

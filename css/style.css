@@ -32,6 +32,17 @@ body {
 	margin: 0;
 }
 
+#page-content {
+	margin-top: 50px;
+	padding: 20px;
+	display: flex;
+	flex-direction: row;
+	gap: 30px;
+	justify-content: center;
+	width: 100%;
+    box-sizing: border-box;
+}
+
 * {
 	font-family: var(--font-family);
 }
@@ -50,6 +61,7 @@ span {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	align-items: center;
 	gap: 1rem;
 }
 
@@ -143,6 +155,71 @@ span {
 
 .slider::-ms-fill-lower {
 	background: var(--text-color-a);
+}
+
+.dropdown {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	outline: none;
+	border: none;
+	border-radius: 10px;
+	background-color: var(--background-color-a);
+	color: var(--text-color-a);
+	padding: 5px 10px;
+	font-size: 1rem;
+}
+
+.dropdown::-ms-expand {
+    display: none;
+}
+
+.switch {
+	position: relative;
+	display: inline-block;
+	width: 3rem;
+	height: 1.5rem;
+}
+
+.switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-radius: 10px;
+	background-color: var(--background-color-a);
+	transition: 200ms ease-in-out;
+	-webkit-transition: 200ms ease-in-out;
+}
+
+.slider:before {
+	position: absolute;
+	content: "";
+	height: 1rem;
+	width: 1rem;
+	left: 6px;
+	border-radius: 50%;
+	background-color: white;
+	transition: 200ms ease-in-out;
+	-webkit-transition: 200ms ease-in-out;
+}
+
+input:checked + .slider {
+	background-color: var(--accent-color-a);
+}
+
+input:checked + .slider:before {
+	transform: translateX(1rem);
+	-webkit-transform: translateX(1rem);
+	-ms-transform: translateX(1rem);
 }
 
 /* #endregion */
@@ -258,17 +335,6 @@ header #search-bar {
 
 /* #endregion */
 
-#page-content {
-	margin-top: 50px;
-	padding: 20px;
-	display: flex;
-	flex-direction: row;
-	gap: 30px;
-	justify-content: center;
-	width: 100%;
-    box-sizing: border-box;
-}
-
 /* #region FILTERS */
 
 #filter-list {
@@ -361,10 +427,25 @@ header #search-bar {
 
 #options-list span {
 	margin-left: 5px;
+	gap: 0.5rem;
+	vertical-align: baseline;
 }
 
-#options-list span input {
+#options-list span p {
+	text-transform: lowercase;
+}
+
+#options-list span .input {
 	flex-grow: 1;
+}
+
+#options-list span .dropdown {
+	margin-left: auto;
+	width: 25%;
+}
+
+#options-list span .switch {
+	margin-left: auto;
 }
 
 /* #endregion */
@@ -410,7 +491,7 @@ header #search-bar {
 	vertical-align: middle;
 }
 
-.post-description, .description, .comment-header {
+.post-description, .description, .comment-header, #options-list span p {
 	color: var(--text-color-b);
 	font-size: 0.85rem;
 }
