@@ -260,7 +260,7 @@ function setUpPage() {
 		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
 			hidePostViewer();
 		} else if (postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post")) {
-			showPostViewer(element.getAttribute("data-post-id"));
+			showPostViewer(element.closest(".post").getAttribute("data-post-id"));
 		} 
 	});
 

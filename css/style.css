@@ -551,6 +551,7 @@ header #search-bar {
 .comment {
 	flex-direction: column;
 	gap: 0.5rem;
+	align-items: flex-start;
 }
 
 .comment-header img {
