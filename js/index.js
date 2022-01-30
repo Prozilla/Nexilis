@@ -387,52 +387,55 @@ function renderPosts(forceOverwrite) {
  * @param {number} id - Id of the post that needs to be rendered
  */
  function showPostViewer(id) {
-	postViewer.setAttribute("data-post-id", id);
+	if (postViewer.getAttribute("data-post-id") != id) {
+		postViewer.setAttribute("data-post-id", id);
+		postViewer.innerHTML = "";
 
-	// Load post (has to be made into a seperate function)
-	fetch(`https://www.reddit.com/comments/${id}/.json`).then(function(result) {
-		return result.json();
-	}).then(async function(result) {
-		const post = result[0].data.children[0].data;
-		const threads = result[1].data.children;
+		// Load post (has to be made into a seperate function)
+		fetch(`https://www.reddit.com/comments/${id}/.json`).then(function(result) {
+			return result.json();
+		}).then(async function(result) {
+			const post = result[0].data.children[0].data;
+			const threads = result[1].data.children;
 
-		const subRedditName = post.subreddit_name_prefixed;
-		const author = "u/" + post.author;
-		const title = post.title;
-		const description = `<p class="post-description">${post.selftext}</p>`;
-		const id = post.id;
+			const subRedditName = post.subreddit_name_prefixed;
+			const author = "u/" + post.author;
+			const title = post.title;
+			const description = `<p class="post-description">${post.selftext}</p>`;
+			const id = post.id;
 
-		const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
-		const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
-		const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
+			const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
+			const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
+			const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
-		postViewer.innerHTML = `<div class="post box">
-			<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
-			<p class="post-title">${title}</p>
-			${description}
-			${await renderPostMedia(post)}
-			<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
-			<p id="loading-comments">Loading comments...</p>
-		</div>`;
+			postViewer.innerHTML = `<div class="post box">
+				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
+				<p class="post-title">${title}</p>
+				${description}
+				${await renderPostMedia(post)}
+				<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
+				<p id="loading-comments">Loading comments...</p>
+			</div>`;
 
-		if (threads.length) {
-			for (let i = 0; i < threads.length; i++) {
-				const comment = await renderComment(threads[i]);
+			if (threads.length) {
+				for (let i = 0; i < threads.length; i++) {
+					const comment = await renderComment(threads[i]);
 
-				if (postViewer.getAttribute("data-post-id") != id)
-					return;
-				
-				comment.replace(/\\n\\t\\t\\t/g, "");
+					if (postViewer.getAttribute("data-post-id") != id)
+						return;
+					
+					comment.replace(/\\n\\t\\t\\t/g, "");
 
-				const div = document.createElement("div");
-				div.innerHTML = comment;
+					const div = document.createElement("div");
+					div.innerHTML = comment;
 
-				if (i == 0)
-					postViewer.firstChild.querySelector("#loading-comments").remove();
-				postViewer.firstChild.appendChild(div);
+					if (i == 0)
+						postViewer.firstChild.querySelector("#loading-comments").remove();
+					postViewer.firstChild.appendChild(div);
+				}
 			}
-		}
-	});
+		});
+	}
 
 	// Show post viewer
 	postViewer.classList.add("active");
