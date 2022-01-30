@@ -491,6 +491,13 @@ header #search-bar {
 	vertical-align: middle;
 }
 
+#posts-list .post .post-description {
+	max-height: 135px;
+	overflow: hidden;
+	mask-image: linear-gradient(180deg, var(--background-color-a) 60%,transparent);
+	-webkit-mask-image: linear-gradient(180deg, var(--background-color-a) 60%, transparent);
+}
+
 .post-description, .description, .comment-header, #options-list span p {
 	color: var(--text-color-b);
 	font-size: 0.85rem;
