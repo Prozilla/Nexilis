@@ -213,7 +213,9 @@ function loadPage() {
 	} else {
 		setFilter(1);
 	}
+
 	updateSubredditList();
+	renderPosts();
 
 	// Set up input events
 	getSubreddit();
@@ -228,27 +230,24 @@ function loadPage() {
 
 	// Set up click events
 	document.addEventListener("click", event => {
-		if (!header.contains(event.target) || event.target.id == "side-menu-toggle")
+		const element = event.target;
+
+		if (!header.contains(element) || element.id == "side-menu-toggle")
 			getSubreddit();
 
-		if (!sideMenu.contains(event.target) && event.target.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
+		if (!sideMenu.contains(element) && element.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
 			toggleSideMenu();
 
-		if (!subredditOptions.contains(event.target) && feedName.classList.contains("active"))
+		if (!subredditOptions.contains(element) && feedName.classList.contains("active"))
 			hideFeedName();
 
-		if (!subredditOptions.contains(event.target) && !customFeedsList.contains(event.target) && customFeedsList.classList.contains("active"))
+		if (!subredditOptions.contains(element) && !customFeedsList.contains(element) && customFeedsList.classList.contains("active"))
 			customFeedsList.classList.remove("active");
 
-		if (!postViewer.firstChild?.contains(event.target) && postViewer.classList.contains("active")) {
+		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (postsList.contains(event.target) && event.target.nodeName != "VIDEO") {
-			let element = event.target;
-			while(element && !element.getAttribute("data-post-id"))
-				element = element.parentNode;
-
-			if (element)
-				showPostViewer(element.getAttribute("data-post-id"));
+		} else if (postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post")) {
+			showPostViewer(element.getAttribute("data-post-id"));
 		} 
 	});
 
@@ -330,6 +329,12 @@ function renderPosts() {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
+				console.log(i, post);
+
+				// Skip duplicate posts
+				if (document.querySelector(`[data-post-id="${post.id}"]`) != null)
+					continue;
+
 				const subRedditName = post.subreddit_name_prefixed;
 				const author = "u/" + post.author;
 				const title = post.title;
@@ -356,8 +361,9 @@ function renderPosts() {
 
 				postCount++;
 				lastPost = "t3_" + post.id;
-				loadingNewPosts = false;
 			}
+
+			loadingNewPosts = false;
 		}).catch(function(error) {
 			console.log(error);
 		});
@@ -478,7 +484,7 @@ function hidePostViewer() {
  * Updates the list of posts
  */
 function updateFeed() {
-	if (currentFeed != {subreddits: currentSubreddits, filterIndex: currentFilterIndex})
+	if (currentFeed.subreddits != currentSubreddits || currentFeed.filterIndex != currentFilterIndex)
 		renderPosts();
 }
 
@@ -612,6 +618,7 @@ document.addEventListener("scroll", function(event) {
 	if (screenBottom > lastPostTop && !loadingNewPosts) {
 		renderPosts();
 		loadingNewPosts = true;
+		console.log("rendering posts");
 	}
 });
 
