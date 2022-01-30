@@ -35,7 +35,7 @@ const customFeedsList = document.querySelector("#feeds-list");
 
 // Input elements
 const searchInput = document.querySelector("#search-bar input");
-const sensitiveContentToggle = document.querySelector("#sensitive-content");
+const hideSensitiveContentToggle = document.querySelector("#sensitive-content");
 
 const sideMenu = document.querySelector("#side-menu");
 const pageContent = document.querySelector("#page-content");
@@ -218,7 +218,8 @@ function arraysEqual(array1, array2) {
 function setUpPage() {
 	// Set element properties
 	feedName.disabled = true;
-	sensitiveContentToggle.checked = localStorage.getItem("allowSensitiveContent") == "true" ? true : false;
+	hideSensitiveContentToggle.checked = localStorage.getItem("allowSensitiveContent") == "true" ? false : true;
+	allowSensitiveContent = !hideSensitiveContentToggle.checked;
 
 	// Set up feed
 	if (loadCurrentFeed()) {
@@ -344,6 +345,8 @@ function renderPosts(forceOverwrite) {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
+				console.log(post);
+
 				// Skip duplicate posts
 				if (document.querySelector(`[data-post-id="${post.id}"]`) != null)
 					continue;
@@ -358,14 +361,28 @@ function renderPosts(forceOverwrite) {
 				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
-				if (!allowSensitiveContent && post.over_18)
-					continue;
+				const tags = [];
+
+				if (post.over_18) {
+					if (!allowSensitiveContent) {
+						continue;
+					} else {
+						tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
+					}
+				}
+
+				if (post.stickied)
+					tags.push("<i title=\"Pinned by moderators\" class=\"green fas fa-thumbtack\"></i>");
+				if (post.locked)
+					tags.push("<i title=\"Locked comments\" class=\"yellow fas fa-lock\"></i>");
+				if (post.archived)
+					tags.push("<i title=\"Archived post\" class=\"yellow fas fa-archive\"></i>");
 
 				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
 					break;
 
 				addPost(`<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
-					<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
+					<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
 					<p class="post-title">${title}</p>
 					${description}
 					${await renderPostMedia(post)}
@@ -631,7 +648,6 @@ document.addEventListener("scroll", function(event) {
 	if (screenBottom > lastPostTop && !loadingNewPosts) {
 		renderPosts();
 		loadingNewPosts = true;
-		console.log("rendering posts");
 	}
 });
 
@@ -715,8 +731,8 @@ function hideFeedName() {
 //#region OPTIONS
 
 function toggleSensitiveContent() {
-	localStorage.setItem("allowSensitiveContent", sensitiveContentToggle.checked);
-	allowSensitiveContent = sensitiveContentToggle.checked;
+	localStorage.setItem("allowSensitiveContent", !hideSensitiveContentToggle.checked);
+	allowSensitiveContent = !hideSensitiveContentToggle.checked;
 	renderPosts(true);
 }
 

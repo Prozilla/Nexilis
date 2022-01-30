@@ -11,6 +11,7 @@
 	--accent-color-b: #a34ec7;
 
 	--red: #e5447d;
+	--yellow: #e6da3b;
 	--green: #4ebb58;
 
 	--font-family: "noto sans", Sans-serif;
@@ -522,6 +523,27 @@ header #search-bar {
 
 .empty-feed-warning {
 	text-align: center;
+}
+
+.tags {
+	float: right;
+}
+
+.tags i {
+	font-size: 1.25rem;
+	color: var(--text-color-a);
+}
+
+.tags i.red {
+	color: var(--red);
+}
+
+.tags i.green {
+	color: var(--green);
+}
+
+.tags i.yellow {
+	color: var(--yellow);
 }
 
 /* #endregion */
