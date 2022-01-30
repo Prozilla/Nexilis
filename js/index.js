@@ -218,7 +218,7 @@ function arraysEqual(array1, array2) {
 function setUpPage() {
 	// Set element properties
 	feedName.disabled = true;
-	sensitiveContentToggle.checked = localStorage.getItem("allowSensitiveContent") ? localStorage.getItem("allowSensitiveContent") : false;
+	sensitiveContentToggle.checked = localStorage.getItem("allowSensitiveContent") == "true" ? true : false;
 
 	// Set up feed
 	if (loadCurrentFeed()) {
