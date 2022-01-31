@@ -479,7 +479,7 @@ function renderPosts(forceOverwrite) {
 					<p class="post-title">${title}</p>
 					${description}
 					${await renderPostMedia(post)}
-					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p> ${flair}</span>
+					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p>${flair}</span>
 				</div>`);
 
 				postCount++;
@@ -518,6 +518,17 @@ function renderPosts(forceOverwrite) {
 			const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 			const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
+			let flair = "";
+			if (post.link_flair_text) {
+				let backgroundColor = getClosestDefaultColor(post.link_flair_background_color);
+				if (backgroundColor == defaultColors[4])
+					backgroundColor = defaultColors[5];
+
+				const color = backgroundColor == defaultColors[5] ? defaultColors[4] : defaultColors[5];
+
+				flair = `<p style="background-color: ${backgroundColor}; color: ${color};" class="post-flair">${post.link_flair_text}</p>`;
+			}
+
 			const tags = [];
 
 			if (post.over_18)
@@ -534,7 +545,7 @@ function renderPosts(forceOverwrite) {
 				<p class="post-title">${title}</p>
 				${description}
 				${await renderPostMedia(post)}
-				<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
+				<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p>${flair}</span>
 				<p id="loading-comments">Loading comments...</p>
 			</div>`;
 
