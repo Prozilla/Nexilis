@@ -154,10 +154,7 @@ async function renderPostMedia(post) {
  * @returns {string} Comment and its replies in html format
  */
  async function renderComment(comment) {
-	const replies = comment.data.replies ? Array.from(comment.data.replies.data.children) : null;
-	if (comment.kind == "more") {
-		// Do somethig
-	}
+	let replies = comment.data.replies ? Array.from(comment.data.replies.data.children) : null;
 
 	// Get user icon
 	let icon = `https://www.redditstatic.com/avatars/defaults/v2/avatar_default_${Math.floor(Math.random() * 7)}.png`;
@@ -173,10 +170,26 @@ async function renderPostMedia(post) {
 
 	// ${"<i class=\"comment-line\"></i>".repeat(comment.data.depth + 1)}
 
+	let moreReplies;
+
 	// Render replies recursively
 	if (replies) {
+		// for (let i = 0; i < replies.length; i++)
+		// 	if (replies[i].kind == "more" && replies[i].data.count > 0) {
+		// 		console.log(replies[i]);
+		// 		moreReplies = replies[i].data.children;
+		// 		Fetch comment by id (moreReplies is a list of id's)
+		// 	}
+		// 
+		// if (moreReplies)
+		// 	replies += moreReplies;
+
 		for (let i = 0; i < replies.length; i++)
-			replies[i] = await renderComment(replies[i]);
+			if (replies[i].kind != "more") {
+				replies[i] = await renderComment(replies[i]);
+			} else {
+				replies[i] = "";
+			}
 
 		thread += replies.join("");
 	}
@@ -346,9 +359,16 @@ function setUpPage() {
 
 		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post")) {
+		} else if (!element.classList.contains("blur") && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post")) {
 			showPostViewer(element.closest(".post").getAttribute("data-post-id"));
-		} 
+		}
+
+		if (element.classList.contains("blur"))
+			if (element.classList.contains("active") && element.tagName != "VIDEO") {
+				element.classList.remove("active");
+			} else {
+				element.classList.add("active");
+			}
 	});
 
 	// Set up search

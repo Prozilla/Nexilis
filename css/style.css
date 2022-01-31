@@ -85,11 +85,12 @@ span {
 	margin: 0;
 }
 
-.box > ul, .box > span {
+.box > ul, .box > span, .box a {
 	margin-top: 1rem;
 }
 
 .button {
+	display: block;
 	border: none;
 	border-radius: 10px;
 	outline: none;
@@ -97,15 +98,20 @@ span {
 	color: var(--text-color-a);
 	background-color: var(--background-color-a);
 	transition: background-color 200ms ease-in-out;
+	-webkit-transition: background-color 200ms ease-in-out;
 	cursor: pointer;
+	text-decoration: none;
 }
 
 .button:hover {
+	color: var(--text-color-a);
 	background-color: var(--accent-color-a);
 }
 
 a {
 	color: var(--accent-color-a);
+	transition: color 200ms ease-in-out;
+	-webkit-transition: color 200ms ease-in-out;
 }
 
 a:hover {
@@ -522,6 +528,13 @@ header #search-bar {
 #posts-list .post .post-media-container .post-media.blur {
 	filter: blur(25px);
 	-webkit-filter: blur(25px);
+	transition: 200ms ease-in-out;
+	-webkit-transition: 200ms ease-in-out;
+}
+
+#posts-list .post .post-media-container .post-media.blur.active {
+	filter: blur(0px);
+	-webkit-filter: blur(0px);
 }
 
 .post-description, .description, .comment-header, #options-list span p {
