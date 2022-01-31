@@ -111,6 +111,10 @@ async function renderPostMedia(post) {
 	if (post.crosspost_parent_list)
 		post = post.crosspost_parent_list[0];
 
+	const classes = ["post-media"];
+	if (post.spoiler || post.over_18)
+		classes.push("blur");
+
 	let media;
 	if (post.media) {
 		if (post.media.reddit_video) {
@@ -126,22 +130,22 @@ async function renderPostMedia(post) {
 					<source src=\"${audioSource}" type="audio/mp4">
 				</audio>`;
 
-			media = `<video class="post-media" controls>
+			media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" controls>
 				<source src=\"${source}" type="video/mp4">
 				${audio}
 			</video>`;
 		} else if (post.media.oembed) {
-			media = `<img class="post-media" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
 		}
 	} else if (post.preview) {
 		if (post.preview.images[0].variants.gif) {
-			media = `<img class="post-media" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
 		} else {
-			media = `<img class="post-media" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
 		}
 	}
 
-	return media ? media : "";
+	return media ? `<div class="post-media-container">${media}</div>` : "";
 }
 
 /**
@@ -384,6 +388,66 @@ setUpPage();
 }
 
 /**
+ * Render a post in html format
+ * @param {Object} post - The post that needs to be rendered
+ * @param {boolean} includeComments - Include comments in the render
+ * @returns The rendered post in html format
+ */
+async function renderPost(post, includeComments) {
+	const subRedditName = post.subreddit_name_prefixed;
+	const author = post.author;
+	const title = post.title;
+	const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
+	const id = post.id;
+
+	const upvotesCount = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
+	const commentsCount = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
+	const crosspostsCount = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
+
+	const comments = includeComments ? "<p id=\"loading-comments\">Loading comments...</p>" : "";
+
+	// Flairs
+	let flair = "";
+	if (post.link_flair_text) {
+		let backgroundColor = getClosestDefaultColor(post.link_flair_background_color);
+		if (backgroundColor == defaultColors[4])
+			backgroundColor = defaultColors[5];
+
+		const color = backgroundColor == defaultColors[5] ? defaultColors[4] : defaultColors[5];
+
+		flair = `<p title="Post flair" style="background-color: ${backgroundColor}; color: ${color};" class="post-flair">${post.link_flair_text}</p>`;
+	}
+
+	// Tags
+	let tags = [];
+
+	if (post.over_18)
+		tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
+	if (post.stickied)
+		tags.push("<i title=\"Pinned by moderators\" class=\"green fas fa-thumbtack\"></i>");
+	if (post.locked)
+		tags.push("<i title=\"Locked comments\" class=\"yellow fas fa-lock\"></i>");
+	if (post.archived)
+		tags.push("<i title=\"Archived post\" class=\"yellow fas fa-archive\"></i>");
+	if (post.spoiler)
+		tags.push("<i title=\"Spoiler\" class=\"fas fa-exclamation-circle\"></i>");
+
+	return `<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
+				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by u/${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
+				<p class="post-title">${title}</p>
+				${description}
+				${await renderPostMedia(post)}
+				<span class="post-footer">
+					<p title="Likes"><i class="far fa-heart"></i>${upvotesCount}</p>
+					<p title="Comments"><i class="far fa-comment"></i>${commentsCount}</p>
+					<p title="Crossposts"><i class="fas fa-random"></i>${crosspostsCount}</p>
+					${flair}
+				</span>
+				${comments}
+			</div>`;
+}
+
+/**
  * Render posts of the curren feed and update the list of posts
  * TO DO: save rendered posts to avoid duplicate post in post list
  * @param {boolean} forceOverwrite - If set to true, it will remove old posts before loading new ones
@@ -427,60 +491,17 @@ function renderPosts(forceOverwrite) {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				//console.log(post);
+				console.log(post);
 
 				// Skip duplicate posts
-				if (document.querySelector(`[data-post-id="${post.id}"]`) != null)
+				if (document.querySelector(`[data-post-id="${post.id}"]`) != null || (post.over_18 && !allowSensitiveContent))
 					continue;
 
-				const subRedditName = post.subreddit_name_prefixed;
-				const author = "u/" + post.author;
-				const title = post.title;
-				const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
-				const id = post.id;
-
-				const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
-				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
-				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
-
-				let flair = "";
-				if (post.link_flair_text) {
-					let backgroundColor = getClosestDefaultColor(post.link_flair_background_color);
-					if (backgroundColor == defaultColors[4])
-						backgroundColor = defaultColors[5];
-
-					const color = backgroundColor == defaultColors[5] ? defaultColors[4] : defaultColors[5];
-
-					flair = `<p style="background-color: ${backgroundColor}; color: ${color};" class="post-flair">${post.link_flair_text}</p>`;
-				}
-
-				const tags = [];
-
-				if (post.over_18) {
-					if (!allowSensitiveContent) {
-						continue;
-					} else {
-						tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
-					}
-				}
-
-				if (post.stickied)
-					tags.push("<i title=\"Pinned by moderators\" class=\"green fas fa-thumbtack\"></i>");
-				if (post.locked)
-					tags.push("<i title=\"Locked comments\" class=\"yellow fas fa-lock\"></i>");
-				if (post.archived)
-					tags.push("<i title=\"Archived post\" class=\"yellow fas fa-archive\"></i>");
-
+				// Stop loading new posts if there's a new feed
 				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
 					break;
 
-				addPost(`<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
-					<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
-					<p class="post-title">${title}</p>
-					${description}
-					${await renderPostMedia(post)}
-					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p>${flair}</span>
-				</div>`);
+				addPost(await renderPost(post, false));
 
 				postCount++;
 				lastPost = "t3_" + post.id;
@@ -508,46 +529,7 @@ function renderPosts(forceOverwrite) {
 			const post = result[0].data.children[0].data;
 			const threads = result[1].data.children;
 
-			const subRedditName = post.subreddit_name_prefixed;
-			const author = "u/" + post.author;
-			const title = post.title;
-			const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
-			const id = post.id;
-
-			const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
-			const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
-			const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
-
-			let flair = "";
-			if (post.link_flair_text) {
-				let backgroundColor = getClosestDefaultColor(post.link_flair_background_color);
-				if (backgroundColor == defaultColors[4])
-					backgroundColor = defaultColors[5];
-
-				const color = backgroundColor == defaultColors[5] ? defaultColors[4] : defaultColors[5];
-
-				flair = `<p style="background-color: ${backgroundColor}; color: ${color};" class="post-flair">${post.link_flair_text}</p>`;
-			}
-
-			const tags = [];
-
-			if (post.over_18)
-				tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
-			if (post.stickied)
-				tags.push("<i title=\"Pinned by moderators\" class=\"green fas fa-thumbtack\"></i>");
-			if (post.locked)
-				tags.push("<i title=\"Locked comments\" class=\"yellow fas fa-lock\"></i>");
-			if (post.archived)
-				tags.push("<i title=\"Archived post\" class=\"yellow fas fa-archive\"></i>");
-
-			postViewer.innerHTML = `<div class="post box">
-				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
-				<p class="post-title">${title}</p>
-				${description}
-				${await renderPostMedia(post)}
-				<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p>${flair}</span>
-				<p id="loading-comments">Loading comments...</p>
-			</div>`;
+			postViewer.innerHTML = await renderPost(post, true);
 
 			if (threads.length) {
 				for (let i = 0; i < threads.length; i++) {

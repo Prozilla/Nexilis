@@ -519,18 +519,29 @@ header #search-bar {
 	-webkit-mask-image: linear-gradient(180deg, var(--background-color-a) 60%, transparent);
 }
 
+#posts-list .post .post-media-container .post-media.blur {
+	filter: blur(25px);
+	-webkit-filter: blur(25px);
+}
+
 .post-description, .description, .comment-header, #options-list span p {
 	color: var(--text-color-b);
 	font-size: 0.85rem;
 	word-break: break-word;
 }
 
-.post-media {
+.post-media-container {
 	border-radius: 10px;
 	box-shadow: 0 0 5px 0px var(--background-color-a);
 	width: 100%;
 	height: auto;
 	max-height: 75vh;
+	overflow: hidden;
+}
+
+.post-media {
+	width: 100%;
+	height: 100%;
 }
 
 .post-footer {
@@ -561,7 +572,7 @@ header #search-bar {
 
 .tags i {
 	font-size: 1.25rem;
-	color: var(--text-color-a);
+	color: var(--text-color-c);
 }
 
 .tags i.red {
