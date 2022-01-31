@@ -48,7 +48,7 @@ body {
 	font-family: var(--font-family);
 }
 
-p, li, h2, button, input {
+p, li, h2, button, input, a {
 	font-size: 1rem;
 	font-weight: normal;
 }
@@ -56,6 +56,14 @@ p, li, h2, button, input {
 h1 {
 	font-size: 1.25rem;
 	font-weight: bold;
+}
+
+hr {
+    width: 100%;
+    height: 3px;
+	border: none;
+	border-radius: 10px;
+	background-color: var(--text-color-a);
 }
 
 span {
@@ -94,6 +102,14 @@ span {
 
 .button:hover {
 	background-color: var(--accent-color-a);
+}
+
+a {
+	color: var(--accent-color-a);
+}
+
+a:hover {
+	color: var(--accent-color-b);
 }
 
 /* #region INPUT */
@@ -492,6 +508,10 @@ header #search-bar {
 	vertical-align: middle;
 }
 
+#posts-list .post {
+	cursor: pointer;
+}
+
 #posts-list .post .post-description {
 	max-height: 135px;
 	overflow: hidden;
@@ -502,6 +522,7 @@ header #search-bar {
 .post-description, .description, .comment-header, #options-list span p {
 	color: var(--text-color-b);
 	font-size: 0.85rem;
+	word-break: break-word;
 }
 
 .post-media {
@@ -577,6 +598,10 @@ header #search-bar {
 	gap: 1rem;
 }
 
+#post-viewer .post .post-description {
+	color: var(--text-color-a);
+}
+
 .comment {
 	flex-direction: column;
 	gap: 0.5rem;
@@ -595,10 +620,10 @@ header #search-bar {
 	padding-left: 1.5rem;
 }
 
-#post-viewer .post div:before {
+/*#post-viewer .post div:before {
 	content: "";
 	height: 100%;
-}
+}*/
 
 .comment-line {
 	position: absolute;

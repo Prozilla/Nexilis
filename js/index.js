@@ -152,7 +152,7 @@ async function renderPostMedia(post) {
 	
 	let thread = `<span class="comment" style="margin-left: ${comment.data.depth * 25}px;">
 		<p class="comment-header"><img src="${icon}" loading="lazy"> ${comment.data.author} &middot; ${getTimePassedSinceDate(comment.data.created)} ago</p>
-		<p class="comment-body">${comment.data.body}</p>
+		${comment.data.body_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"comment-body\">")}
 	</span>`;
 
 	// ${"<i class=\"comment-line\"></i>".repeat(comment.data.depth + 1)}
@@ -354,7 +354,7 @@ function renderPosts(forceOverwrite) {
 				const subRedditName = post.subreddit_name_prefixed;
 				const author = "u/" + post.author;
 				const title = post.title;
-				const description = post.selftext ? `<p class="post-description">${post.selftext}</p>` : "";
+				const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
 				const id = post.id;
 
 				const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
@@ -418,15 +418,26 @@ function renderPosts(forceOverwrite) {
 			const subRedditName = post.subreddit_name_prefixed;
 			const author = "u/" + post.author;
 			const title = post.title;
-			const description = `<p class="post-description">${post.selftext}</p>`;
+			const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
 			const id = post.id;
 
 			const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
 			const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 			const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
 
+			const tags = [];
+
+			if (post.over_18)
+				tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
+			if (post.stickied)
+				tags.push("<i title=\"Pinned by moderators\" class=\"green fas fa-thumbtack\"></i>");
+			if (post.locked)
+				tags.push("<i title=\"Locked comments\" class=\"yellow fas fa-lock\"></i>");
+			if (post.archived)
+				tags.push("<i title=\"Archived post\" class=\"yellow fas fa-archive\"></i>");
+
 			postViewer.innerHTML = `<div class="post box">
-				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago</p>
+				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by ${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
 				<p class="post-title">${title}</p>
 				${description}
 				${await renderPostMedia(post)}
