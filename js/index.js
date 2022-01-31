@@ -54,6 +54,18 @@ let lastPost;
 let loadingNewPosts = false;
 let allowSensitiveContent = false;
 
+// Style properties
+const style = getComputedStyle(document.querySelector(":root"));
+const defaultColors = [
+	style.getPropertyValue("--accent-color-a").trim(),
+	style.getPropertyValue("--red").trim(),
+	style.getPropertyValue("--yellow").trim(),
+	style.getPropertyValue("--green").trim(),
+
+	style.getPropertyValue("--text-color-a").trim(),
+	style.getPropertyValue("--background-color-a").trim(),
+];
+
 //#endregion
 
 //#region GET
@@ -211,6 +223,76 @@ function arraysEqual(array1, array2) {
 	return true;
 }
 
+function getHueValue(color) {
+	let r, g, b;
+
+	if (color.startsWith("#")) {
+		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+		r = parseInt(result[1], 16);
+		g = parseInt(result[2], 16);
+		b = parseInt(result[3], 16);
+	} else {
+		color = color.replace(/[^\d,]/g, '').split(',');
+		r = color[0];
+		g = color[1];
+		b = color[2];
+	}
+    
+
+	let rabs, gabs, babs, rr, gg, bb, h, s, v, diff, diffc;
+
+    rabs = r / 255;
+    gabs = g / 255;
+    babs = b / 255;
+
+    v = Math.max(rabs, gabs, babs),
+    diff = v - Math.min(rabs, gabs, babs);
+    diffc = c => (v - c) / 6 / diff + 1 / 2;
+
+    if (diff == 0) {
+        h = s = 0;
+    } else {
+        s = diff / v;
+        rr = diffc(rabs);
+        gg = diffc(gabs);
+        bb = diffc(babs);
+
+        if (rabs === v) {
+            h = bb - gg;
+        } else if (gabs === v) {
+            h = (1 / 3) + rr - bb;
+        } else if (babs === v) {
+            h = (2 / 3) + gg - rr;
+        }
+
+        if (h < 0) {
+            h += 1;
+        }else if (h > 1) {
+            h -= 1;
+        }
+    }
+	
+	return Math.round(h * 360);
+}
+
+function getClosestDefaultColor(color) {
+	const hue = getHueValue(color);
+
+	let closestDefaultColor;
+	let minHueDifference = 240;
+
+	defaultColors.forEach(defaultColor => {
+		const hueDifference = Math.abs(hue - getHueValue(defaultColor));
+
+		if (hueDifference < minHueDifference) {
+			closestDefaultColor = defaultColor;
+			minHueDifference = hueDifference;
+		}
+	});
+
+	return closestDefaultColor;
+}
+
 //#endregion
 
 //#region SET UP
@@ -345,7 +427,7 @@ function renderPosts(forceOverwrite) {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				console.log(post);
+				//console.log(post);
 
 				// Skip duplicate posts
 				if (document.querySelector(`[data-post-id="${post.id}"]`) != null)
@@ -360,6 +442,17 @@ function renderPosts(forceOverwrite) {
 				const upvotes = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
 				const comments = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
 				const crossposts = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
+
+				let flair = "";
+				if (post.link_flair_text) {
+					let backgroundColor = getClosestDefaultColor(post.link_flair_background_color);
+					if (backgroundColor == defaultColors[4])
+						backgroundColor = defaultColors[5];
+
+					const color = backgroundColor == defaultColors[5] ? defaultColors[4] : defaultColors[5];
+
+					flair = `<p style="background-color: ${backgroundColor}; color: ${color};" class="post-flair">${post.link_flair_text}</p>`;
+				}
 
 				const tags = [];
 
@@ -386,7 +479,7 @@ function renderPosts(forceOverwrite) {
 					<p class="post-title">${title}</p>
 					${description}
 					${await renderPostMedia(post)}
-					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p></span>
+					<span class="post-footer"><p><i class="far fa-heart"></i>${upvotes}</p><p><i class="far fa-comment"></i>${comments}</p><p><i class="fas fa-random"></i>${crossposts}</p> ${flair}</span>
 				</div>`);
 
 				postCount++;

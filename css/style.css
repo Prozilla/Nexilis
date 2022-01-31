@@ -1,11 +1,11 @@
 :root {
-	--text-color-a: rgb(255 255 255);
+	--text-color-a: rgb(255, 255, 255);
 	--text-color-b: rgb(175, 175, 175);
-	--text-color-c: rgb(130 130 130);
+	--text-color-c: rgb(130, 130, 130);
 
-	--background-color-a: rgb(12 12 12);
-	--background-color-b: rgb(20 20 20);
-	--background-color-c: rgb(28 28 28);
+	--background-color-a: rgb(12, 12, 12);
+	--background-color-b: rgb(20, 20, 20);
+	--background-color-c: rgb(28, 28, 28);
 
 	--accent-color-a: #bd5fe3;
 	--accent-color-b: #a34ec7;
@@ -540,6 +540,15 @@ header #search-bar {
 .post-footer p i {
 	font-size: 1rem;
 	margin: 0 5px;
+}
+
+.post-flair {
+	padding: 5px 10px;
+    border-radius: 10px;
+	font-size: 0.75rem;
+	color: var(--background-color-a);
+    background-color: var(--accent-color-a);
+    margin-left: auto !important;
 }
 
 .empty-feed-warning {
