@@ -9,7 +9,7 @@
 
 // Feed settings
 let currentSubreddits = [
-	"all",
+	"itookapicture", // Default subreddit
 ];
 
 let currentFilterIndex;
