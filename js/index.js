@@ -66,9 +66,18 @@ const defaultColors = [
 	style.getPropertyValue("--background-color-a").trim(),
 ];
 
-// Auth
-const parameters = window.location.search.substring(1).split("&");
-const code = parameters[0] == "state=connect" ? parameters[1].replace("code=", "") : null;
+// Parameters
+let parameters = window.location.search != "" ? window.location.search.substring(1).split("&") : null;
+
+if (parameters)
+	for (let i = 0; i < parameters.length; i++)
+		if (parameters[i].startsWith("post=")) {
+			showPostViewer(parameters[i].replace("post=", ""));
+			break;
+		}
+
+// OAuth
+const code = (parameters && parameters[0] == "state=connect") ? parameters[1].replace("code=", "") : null;
 
 //console.log(code);
 
@@ -379,6 +388,40 @@ function getClosestDefaultColor(color) {
 
 //#endregion
 
+//#region SET
+
+function setURLParameter(key, value) {
+	let url = location.protocol + '//' + location.host + location.pathname;
+	parameters = window.location.search != "" ? window.location.search.substring(1).split("&") : null;
+
+	index = null;
+	let setURL = false;
+	if (parameters != null) {
+		for (let i = 0; i < parameters.length; i++)
+			if (parameters[i].startsWith(`${key}=`))
+				index = i;
+	} else if (value != null) {
+		url += `?${key}=${value}`;
+		setURL = true;
+	}
+
+	if (!setURL)
+		if (index == null && value != null) {
+			url += window.location.search + `&${key}=${value}`;
+		} else if (index != null && value == null) {
+			parameters.splice(index, 1);
+			if (parameters.length > 0)
+				url += `?${parameters.length > 1 ? parameters.join("&") : parameters[0]}`;
+		} else if (index != null) {
+			parameters[index] = parameters[index].replace(new RegExp(`${key}=[A-z0-9]*`), `${key}=${value}`);
+			url += `?${parameters.length > 1 ? parameters.join("&") : parameters[0]}`;
+		}
+
+	window.history.pushState({ path: url }, "", url);
+}
+
+//#endregion
+
 //#region SET UP
 
 function setUpPage() {
@@ -519,7 +562,12 @@ async function renderPost(post, includeComments) {
 	if (post.spoiler)
 		tags.push("<i title=\"Spoiler\" class=\"fas fa-exclamation-circle\"></i>");
 
-	return `<div data-feed-id="${feedId}" data-post-id="${id}" class="post box">
+	// Feed ID
+	let postFeedId = "";
+	if (!includeComments)
+		postFeedId = `data-feed-id="${feedId}"`;
+
+	return `<div ${postFeedId} data-post-id="${id}" class="post box">
 				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by u/${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
 				<p class="post-title">${title}</p>
 				${description}
@@ -578,10 +626,11 @@ function renderPosts(forceOverwrite) {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				// console.log(post);
+				console.log(post);
 
 				// Skip duplicate posts
-				if (document.querySelector(`[data-post-id="${post.id}"]`) != null || (post.over_18 && !allowSensitiveContent))
+				const duplicatePost = document.querySelector(`[data-post-id="${post.id}"]`);
+				if ((duplicatePost != null && duplicatePost.id != "post-viewer") || (post.over_18 && !allowSensitiveContent))
 					continue;
 
 				// Stop loading new posts if there's a new feed
@@ -605,6 +654,9 @@ function renderPosts(forceOverwrite) {
  * @param {number} id - Id of the post that needs to be rendered
  */
  function showPostViewer(id) {
+	setURLParameter("post", id);
+	// Set post to clicked post (faster loading)
+
 	if (postViewer.getAttribute("data-post-id") != id) {
 		postViewer.setAttribute("data-post-id", id);
 		postViewer.innerHTML = "";
@@ -654,6 +706,8 @@ function renderPosts(forceOverwrite) {
  * Disables the post viewer
  */
 function hidePostViewer() {
+	setURLParameter("post");
+
 	postViewer.classList.remove("active");
 
 	postsList.style.filter = null;
