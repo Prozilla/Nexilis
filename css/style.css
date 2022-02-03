@@ -3,19 +3,24 @@
 	--text-color-b: rgb(175, 175, 175);
 	--text-color-c: rgb(130, 130, 130);
 
-	--background-color-a: rgb(12, 12, 12);
-	--background-color-b: rgb(20, 20, 20);
-	--background-color-c: rgb(28, 28, 28);
+	--background-color-a: rgb(0, 0, 0);
+	--background-color-b: rgb(10, 10, 10);
+	--background-color-c: rgb(25, 25, 25);
 
-	--accent-color-a: #bd5fe3;
-	--accent-color-b: #a34ec7;
+	--accent-color-a: #b900ff;
+	--accent-color-b: #9800d1;
 
-	--red: #e5447d;
-	--yellow: #e6da3b;
-	--green: #4ebb58;
+	--red: #ff008b;
+	--yellow: #ffe800;
+	--green: #00ff6c;
 
 	--font-family: "noto sans", Sans-serif;
 	--page-width: 640px;
+
+	--border-radius-a: 16px;
+	--border-radius-b: 9999px;
+	--shadow: 0 0 5px 5px var(--background-color-a);
+	--padding: 5px 15px;
 }
 
 html {
@@ -62,7 +67,7 @@ hr {
     width: 100%;
     height: 3px;
 	border: none;
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	background-color: var(--text-color-a);
 }
 
@@ -77,26 +82,31 @@ span {
 .box {
 	background-color: var(--background-color-c);
 	padding: 20px;
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	overflow: hidden;
 }
 
-.box p, .box h2 {
+.box p, .box h2:first-child, a.button {
 	margin: 0;
 }
 
-.box > ul, .box > span, .box a {
+.box h2 {
+	margin-bottom: 0;
+}
+
+.box > ul, .box > span {
 	margin-top: 1rem;
 }
 
 .button {
 	display: block;
 	border: none;
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	outline: none;
-	padding: 5px 10px;
+	padding: var(--padding);
 	color: var(--text-color-a);
 	background-color: var(--background-color-a);
+	text-align: center;
 	transition: background-color 200ms ease-in-out;
 	-webkit-transition: background-color 200ms ease-in-out;
 	cursor: pointer;
@@ -106,6 +116,19 @@ span {
 .button:hover {
 	color: var(--text-color-a);
 	background-color: var(--accent-color-a);
+}
+
+.button-group {
+	margin-top: 1rem;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 1rem 30px;
+	justify-content: center;
+}
+
+.button-group .button {
+	flex-grow: 1;
 }
 
 a {
@@ -122,9 +145,9 @@ a:hover {
 
 .input {
 	border: none;
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	outline: none;
-	padding: 5px 10px;
+	padding: var(--padding);
 	color: var(--text-color-a);
 	background: var(--background-color-a);
 	cursor: text;
@@ -143,13 +166,13 @@ a:hover {
 	width: 100%;
 	height: 0.75rem;
 	background: var(--background-color-a);
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	cursor: pointer;
 }
 
 .slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
-	border-radius: 50%;
+	border-radius: var(--border-radius-b);
 	width: 1rem;
 	height: 1rem;
 	background-color: var(--text-color-a);
@@ -160,12 +183,12 @@ a:hover {
 	width: 100%;
 	height: 0.75rem;
 	background: var(--background-color-a);
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	cursor: pointer;
 }
 
 .slider::-moz-range-thumb {
-	border-radius: 50%;
+	border-radius: var(--border-radius-b);
 	width: 1rem;
 	height: 1rem;
 	background: var(--text-color-a);
@@ -186,10 +209,10 @@ a:hover {
 	appearance: none;
 	outline: none;
 	border: none;
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	background-color: var(--background-color-a);
 	color: var(--text-color-a);
-	padding: 5px 10px;
+	padding: var(--padding);
 	font-size: 1rem;
 }
 
@@ -217,7 +240,7 @@ a:hover {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 	background-color: var(--background-color-a);
 	transition: 200ms ease-in-out;
 	-webkit-transition: 200ms ease-in-out;
@@ -229,7 +252,7 @@ a:hover {
 	height: 1rem;
 	width: 1rem;
 	left: 6px;
-	border-radius: 50%;
+	border-radius: var(--border-radius-b);
 	background-color: white;
 	transition: 200ms ease-in-out;
 	-webkit-transition: 200ms ease-in-out;
@@ -260,7 +283,7 @@ header {
 	top: 0;
 	box-sizing: border-box;
 	background-color: var(--background-color-c);
-	box-shadow: 0 0 5px 5px var(--background-color-a);
+	box-shadow: var(--shadow);
 	z-index: 9;
 }
 
@@ -285,6 +308,9 @@ header #page-title {
 
 header #side-menu-toggle {
 	display: none;
+	cursor: pointer;
+	color: var(--text-color-a);
+	font-size: 1.25rem;
 }
 
 /* #endregion */
@@ -296,10 +322,10 @@ header #search-bar {
 	gap: 10px;
 	align-items: center;
 	margin: auto;
-	padding: 5px 10px;
+	padding: var(--padding);
 	width: var(--page-width);
 	background-color: var(--background-color-a);
-	border-radius: 10px;
+	border-radius: var(--border-radius-a);
 }
 
 #search-bar input {
@@ -334,7 +360,7 @@ header #search-bar {
 	height: 1.5rem;
 	padding: 0;
 	font-size: 0.75rem;
-	border-radius: 5px;
+	border-radius: var(--border-radius-b);
 	background-color: var(--background-color-a);
 }
 
@@ -369,8 +395,8 @@ header #search-bar {
 }
 
 #filter-list div {
-	padding: 5px 10px;
-	border-radius: 10px;
+	padding: var(--padding);
+	border-radius: var(--border-radius-a);
 	text-align: center;
 	transition: background-color 200ms ease-in-out;
 	cursor: pointer;
@@ -404,6 +430,7 @@ header #search-bar {
 #side-menu > div {
 	position: sticky;
 	top: 70px;
+	overflow-x: auto;
 }
 
 #subreddits-list {
@@ -429,10 +456,6 @@ header #search-bar {
 
 #subreddit-options {
 	margin-top: 1rem;
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	gap: 1rem 30px;
 }
 
 #subreddit-options button {
@@ -508,7 +531,7 @@ header #search-bar {
 }
 
 .post-subreddit-icon, .subreddit-icon {
-	border-radius: 50%;
+	border-radius: var(--border-radius-b);
 	height: 1.25rem;
 	margin-right: 7.5px;
 	vertical-align: middle;
@@ -544,8 +567,8 @@ header #search-bar {
 }
 
 .post-media-container {
-	border-radius: 10px;
-	box-shadow: 0 0 5px 0px var(--background-color-a);
+	border-radius: var(--border-radius-a);
+	box-shadow: var(--shadow);
 	width: 100%;
 	height: auto;
 	max-height: 75vh;
@@ -567,8 +590,8 @@ header #search-bar {
 }
 
 .post-flair {
-	padding: 5px 10px;
-    border-radius: 10px;
+	padding: var(--padding);
+    border-radius: var(--border-radius-a);
 	font-size: 0.75rem;
 	color: var(--background-color-a);
     background-color: var(--accent-color-a);
@@ -621,7 +644,7 @@ header #search-bar {
 #post-viewer .post {
 	width: var(--page-width);
 	margin: 65px auto 20px auto;
-	box-shadow: 0 0 5px 5px var(--background-color-a);
+	box-shadow: var(--shadow);
 	box-sizing: border-box;
 }
 
@@ -645,7 +668,7 @@ header #search-bar {
 	width: 1.25rem;
 	height: 1.25rem;
 	vertical-align: bottom;
-	border-radius: 50%;
+	border-radius: var(--border-radius-b);
 	margin-right: 0.25rem;
 }
 
@@ -686,8 +709,6 @@ header #search-bar {
 
 	header #side-menu-toggle {
 		display: block;
-		color: var(--text-color-a);
-		font-size: 1.25rem;
 	}
 
 	#search-results {
@@ -707,9 +728,12 @@ header #search-bar {
 	#side-menu {
 		position: fixed;
 		right: 20px;
+		overflow: overlay;
+		height: 90%;
 		min-width: calc(var(--page-width) / 2);
 		transform: translateX(110%);
 		transition: transform 200ms ease-in-out;
+		-webkit-transition: transform 200ms ease-in-out;
 	}
 
 	#side-menu.active {
@@ -717,7 +741,7 @@ header #search-bar {
 	}
 
 	#side-menu > div > div {
-		box-shadow: 0 0 5px 5px var(--background-color-a);
+		box-shadow: var(--shadow);
 	}
 	
 	#posts-list {

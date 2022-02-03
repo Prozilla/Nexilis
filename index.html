@@ -20,6 +20,9 @@
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
 	<meta charset="UTF-8">
+
+	<!-- scripts -->
+	<!--<script data-main = "libs/main" src = "node_modules\axios/lib/axios.js"></script>-->
 </head>
 <body>
 	<!-- header -->
@@ -71,7 +74,7 @@
 				<div id="subreddits-list" class="box">
 					<h2>Current feed</h2>
 					<ul></ul>
-					<div id="subreddit-options">
+					<div id="subreddit-options" class="button-group">
 						<button class="button" onclick="showFeedName()">Save feed</button>
 						<button class="button" onclick="showCustomFeedList()">Load feed</button>
 						<input id="feed-name" class="input" type="text" placeholder="Enter a feed name">
@@ -100,7 +103,10 @@
 							<span class="slider"></span>
 						</label>
 					</span>
-					<a href="https://www.reddit.com/api/v1/authorize?response_type=code&client_id=xwiq3LRpjO0ao8RmQcLQaQ&redirect_uri=https%3A%2F%2Fnexilis.netlify.app%2F&scope=identity+mysubreddits&duration=permanent&state=connect" class="button">Connect to Reddit</a>
+					<!--<h2>Account</h2>
+					<div class="button-group">
+						<a href="https://www.reddit.com/api/v1/authorize?response_type=code&client_id=xwiq3LRpjO0ao8RmQcLQaQ&redirect_uri=https%3A%2F%2Fnexilis.netlify.app%2F&scope=identity+mysubreddits&duration=permanent&state=connect" class="button">Connect to Reddit</a>
+					</div>-->
 				</div>
 			</div>
 		</aside>

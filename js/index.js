@@ -66,6 +66,73 @@ const defaultColors = [
 	style.getPropertyValue("--background-color-a").trim(),
 ];
 
+// Auth
+const parameters = window.location.search.substring(1).split("&");
+const code = parameters[0] == "state=connect" ? parameters[1].replace("code=", "") : null;
+
+//console.log(code);
+
+/* // METHOD 1
+const http = new XMLHttpRequest();
+const httpParameters = `grant_type=authorization_code&code=${code}&redirect_uri=https%3A%2F%2Fnexilis.netlify.app%2F`;
+
+http.open("POST", "https://www.reddit.com/api/v1/access_token");
+http.setRequestHeader("Access-Control-Allow-Origin","*");
+http.setRequestHeader("Access-Control-Allow-Credentials", "true");
+http.setRequestHeader("Access-Control-Allow-Methods", "POST");
+http.setRequestHeader("Access-Control-Allow-Headers", "Content-Type");
+
+http.onreadystatechange = function() {
+    if (http.readyState == 4 && http.status == 200) {
+        alert(http.responseText);
+    }
+}
+
+http.send(httpParameters);*/
+
+/* // METHOD 2
+(async () => {
+	const rawResponse = await fetch("https://www.reddit.com/api/v1/access_token", {
+		headers: {
+			"Accep": "application/json",
+      		"Content-Type": "application/json",
+		},
+		//method: "POST",
+		data: {
+			"grant_type": "authorization_code",
+			"code": code,
+			"redirect_uri": "https%3A%2F%2Fnexilis.netlify.app%2F",
+		},
+	});
+	const content = await rawResponse.json();
+  
+	console.log(content);
+})();*/
+
+// METHOD 3
+
+/*authorize(code);
+
+async function authorize(token) {
+	if (!token)
+		return;
+
+	const encode = window.btoa(code);
+	const redditTokens = await Axios.post("https://www.reddit.com/api/v1/access_token", 
+		`grant_type=authorization_code&code=${code}&redirect_uri=https://nexilis.netlify.app/`, {
+		headers: {
+			"Authorization": `Basic ${encode}`,
+			"Content-Type": 'application/x-www-form-urlencoded'
+		}
+	}).then(res => {
+		if (res.data.error) {
+			return toast.error("Please re-authenticate");
+		}
+
+		return res.data;
+	}).catch(console.log);
+}*/
+
 //#endregion
 
 //#region GET
@@ -511,7 +578,7 @@ function renderPosts(forceOverwrite) {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				console.log(post);
+				// console.log(post);
 
 				// Skip duplicate posts
 				if (document.querySelector(`[data-post-id="${post.id}"]`) != null || (post.over_18 && !allowSensitiveContent))
