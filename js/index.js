@@ -43,8 +43,7 @@ const header = document.querySelector("header");
 const feedName = document.querySelector("#feed-name");
 const subredditOptions = document.querySelector("#subreddit-options");
 const postViewer = document.querySelector("#post-viewer");
-
-
+const scrollUp = document.querySelector("#scroll-up");
 
 // Meta settings
 let feedId = 0;
@@ -458,7 +457,7 @@ function setUpPage() {
 		if (!header.contains(element) || element.id == "side-menu-toggle")
 			getSubreddit();
 
-		if (!sideMenu.contains(element) && element.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
+		if (!sideMenu.firstChild.nextSibling.contains(element) && element.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
 			toggleSideMenu();
 
 		if (!subredditOptions.contains(element) && feedName.classList.contains("active"))
@@ -561,6 +560,8 @@ async function renderPost(post, includeComments) {
 		tags.push("<i title=\"Archived post\" class=\"yellow fas fa-archive\"></i>");
 	if (post.spoiler)
 		tags.push("<i title=\"Spoiler\" class=\"fas fa-exclamation-circle\"></i>");
+	if (includeComments)
+		tags.push("<button class=\"post-viewer-close button\" onclick=\"hidePostViewer()\"></button>");
 
 	// Feed ID
 	let postFeedId = "";
@@ -588,6 +589,13 @@ async function renderPost(post, includeComments) {
  * @param {boolean} forceOverwrite - If set to true, it will remove old posts before loading new ones
  */
 function renderPosts(forceOverwrite) {
+	if (!currentSubreddits.length) {
+		if (document.querySelector(".empty-feed-warning") == null)
+			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+
+		return;
+	}
+
 	// Check if the feed has been changed
 	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex || forceOverwrite) {
 		currentFeed.subreddits = currentSubreddits.slice();
@@ -606,9 +614,6 @@ function renderPosts(forceOverwrite) {
 		}
 
 		saveCurrentFeed();
-
-		if (!currentSubreddits.length)
-			return addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
 
 		feedId++;
 	}
@@ -887,7 +892,20 @@ document.addEventListener("scroll", function(event) {
 		renderPosts();
 		loadingNewPosts = true;
 	}
+
+	if (window.scrollY > 500) {
+		scrollUp.classList.add("active");
+	} else if (scrollUp.classList.contains("active")) {
+		scrollUp.classList.remove("active");
+	}
 });
+
+function scrollToTop() {
+	window.scroll({
+		top: 0, 
+		behavior: "smooth",
+	});
+}
 
 //#endregion
 
