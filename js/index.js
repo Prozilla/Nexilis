@@ -19,6 +19,7 @@ const filters = [
 	"new",
 	"top",
 	"rising",
+	"controversial",
 ];
 
 let currentFeed = {
@@ -698,11 +699,11 @@ function renderPosts(forceOverwrite) {
 	// Show post viewer
 	postViewer.classList.add("active");
 
-	postsList.style.filter = "blur(5px)";
-	postsList.style.pointerEvents = "none";
-
-	sideMenu.style.filter = "blur(5px)";
-	sideMenu.style.pointerEvents = "none";
+	for (let i = 0; i < pageContent.children.length; i++)
+		if (pageContent.children[i].id != "post-viewer") {
+			pageContent.children[i].style.filter = "blur(5px)";
+			pageContent.children[i].style.pointerEvents = "none";
+		}
 
 	document.body.style.overflow = "hidden";
 }
@@ -715,11 +716,11 @@ function hidePostViewer() {
 
 	postViewer.classList.remove("active");
 
-	postsList.style.filter = null;
-	postsList.style.pointerEvents = null;
-
-	sideMenu.style.filter = null;
-	sideMenu.style.pointerEvents = null;
+	for (let i = 0; i < pageContent.children.length; i++)
+		if (pageContent.children[i].id != "post-viewer") {
+			pageContent.children[i].style.filter = null;
+			pageContent.children[i].style.pointerEvents = null;
+		}
 
 	document.body.style.overflow = null;
 }

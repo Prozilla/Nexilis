@@ -2,8 +2,8 @@
 <head lang="en">
 	<!-- SEO -->
 	<title>Nexilis</title>
-	<meta name="description" content="A Reddit clone made by Prozilla">
-	<meta name="keywords" content="Reddit, Spreddit, Reddit clone, clone, social media, subreddit, Prozilla">
+	<meta name="description" content="A Reddit clone made by Prozilla powered by the Reddit API. Add your favourite subreddits, choose a sort option and start browsing your custom feed!">
+	<meta name="keywords" content="Reddit, Nexilis, Reddit clone, clone, social media, subreddit, Prozilla, feed, Reddit API, Spreddit, Spredd-it">
 	<meta name="author" content="Prozilla">
 	<meta name="og:title" property="og:title" content="Nexilis">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -20,9 +20,6 @@
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
 	<meta charset="UTF-8">
-
-	<!-- scripts -->
-	<!--<script data-main = "libs/main" src = "node_modules\axios/lib/axios.js"></script>-->
 </head>
 <body>
 	<!-- header -->
@@ -48,20 +45,29 @@
 	<main id="page-content">
 		<div id="posts-list">
 			<div id="filter-list" class="box">
-				<div onclick="setFilter(0)">
-					<i class="fas fa-crown"></i> Best
+				<div class="filter" onclick="setFilter(0)">
+					<i class="fas fa-crown"></i>
+					<p>Best</p>
 				</div>
-				<div onclick="setFilter(1)">
-					<i class="fas fa-fire"></i> Hot
+				<div class="filter" onclick="setFilter(1)">
+					<i class="fas fa-fire"></i>
+					<p>Hot</p>
 				</div>
-				<div onclick="setFilter(2)">
-					<i class="fas fa-certificate"></i> New
+				<div class="filter" onclick="setFilter(2)">
+					<i class="fas fa-certificate"></i>
+					<p>New</p>
 				</div>
-				<div onclick="setFilter(3)">
-					<i class="fas fa-trophy"></i> Top
+				<div class="filter" onclick="setFilter(3)">
+					<i class="fas fa-trophy"></i>
+					<p>Top</p>
 				</div>
-				<div onclick="setFilter(4)">
-					<i class="fas fa-chart-line"></i> Rising
+				<div class="filter" onclick="setFilter(4)">
+					<i class="fas fa-chart-line"></i>
+					<p>Rising</p>
+				</div>
+				<div class="filter" onclick="setFilter(5)">
+					<i class="fas fa-bullhorn"></i>
+					<p>Controversial</p>
 				</div>
 			</div>
 			<!-- list of posts -->
