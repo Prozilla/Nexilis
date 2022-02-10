@@ -45,6 +45,7 @@ const feedName = document.querySelector("#feed-name");
 const subredditOptions = document.querySelector("#subreddit-options");
 const postViewer = document.querySelector("#post-viewer");
 const scrollUp = document.querySelector("#scroll-up");
+const videoControls = document.getElementById("video-controls");
 
 // Meta settings
 let feedId = 0;
@@ -202,11 +203,11 @@ async function renderPostMedia(post) {
 			let audio = "";
 
 			if (audioResponse.status == 200)
-				audio = `<audio controls>
+				audio = `<audio preload="auto" controls loop>
 					<source src=\"${audioSource}" type="audio/mp4">
 				</audio>`;
 
-			media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" controls>
+			media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop>
 				<source src=\"${source}" type="video/mp4">
 				${audio}
 			</video>`;
@@ -221,7 +222,7 @@ async function renderPostMedia(post) {
 		}
 	}
 
-	return media ? `<div class="post-media-container">${media}</div>` : "";
+	return media ? `<div class="post-media-container"><div class="post-media-inner-container">${media}</div></div>` : "";
 }
 
 /**
@@ -453,7 +454,7 @@ function setUpPage() {
 
 	// Set up click events
 	document.addEventListener("click", event => {
-		const element = event.target;
+		let element = event.target;
 
 		if (!header.contains(element) || element.id == "side-menu-toggle")
 			getSubreddit();
@@ -469,12 +470,17 @@ function setUpPage() {
 
 		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (!element.classList.contains("blur") && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post")) {
+		} else if (!element.classList.contains("blur") && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post") && element.closest(".post").querySelector("video") == null) {
 			showPostViewer(element.closest(".post").getAttribute("data-post-id"));
 		}
 
+		console.log(element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media.blur"));
+
+		if (element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media") != null)
+			element = element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media");
+
 		if (element.classList.contains("blur"))
-			if (element.classList.contains("active") && element.tagName != "VIDEO") {
+			if (element.classList.contains("active")) {
 				element.classList.remove("active");
 			} else {
 				element.classList.add("active");
@@ -497,24 +503,204 @@ setUpPage();
  * Adds a single post to the list of posts
  * @param {string} html - A post in html format
  */
- function addPost(html) {
+async function addPost(html) {
 	const div = document.createElement("div");
 	div.innerHTML = html;
 
-	postsList.appendChild(div.firstChild);
+	const post = postsList.appendChild(div.firstChild);
 
-	postsList.querySelectorAll("video.post-media").forEach(video => {
+	// Set up video
+	const video = post.querySelector("video.post-media");
+	if (video != null) {
+		video.controls = false;
+
+		const controlsDiv = document.createElement("div");
+		controlsDiv.innerHTML = `<div class="video-controls" id="video-controls">
+				<div class="primary-video-controls">
+					<i class="button icon fa-solid fa-play"></i>
+				</div>
+				<div class="secondary-video-controls">
+					<i id="pause" class="button icon fa-solid fa-pause"></i>
+					<div id="progress"></div>
+					<i id="volume" class="button icon fa-solid fa-volume-high">
+						<div class="slider"></div>
+					</i>
+				</div>
+			</div>`;
+
+		video.parentElement.appendChild(controlsDiv.firstChild);
+
 		const audio = video.querySelector("audio");
-		if (audio) {
+		const audioSlider = video.parentElement.querySelector(".secondary-video-controls #volume .slider");
+		const videoProgress = video.parentElement.querySelector(".secondary-video-controls #progress");
+
+		if (!audio) {
+			video.parentElement.classList.add("muted");
+			audioSlider.style.display = "none";
+			audioSlider.parentElement.style.cursor = "auto";
+			audioSlider.parentElement.style.color = "inherit";
+		} else {
+			audioSlider.value = 100;
+			audioSlider.style.setProperty("--volume", 100);
+		}
+
+		let playing = false;
+		let muted = false;
+		let volume = audioSlider.value;
+		let draggingVideoProgress = false;
+		let draggingAudioSlider = false;
+
+		video.parentElement.querySelector(".primary-video-controls").addEventListener("click", async function(event) {
+			event.target.closest(".video-controls").classList.add("active");
+
+			// if (audio) {
+			// 	console.log(`video: ${video.currentTime}, audio: ${audio.currentTime}, diff: ${video.currentTime - audio.currentTime}`);
+			// 	console.log(video.readyState, audio.readyState);
+			// }
+
+			let progressUpdateInterval = null;
+
 			video.onplay = function() {
-				audio.currentTime = video.currentTime;
-				audio.play();
+				if (audio) {
+					audio.currentTime = video.currentTime;
+					audio.play();
+				}
+
+				video.play();
+
+				// Keep audio in sync
+				if (audio)
+					setInterval(() => {
+						if (Math.abs(video.currentTime - audio.currentTime) > 0.2)
+							audio.currentTime = video.currentTime;
+					}, 100);
+
+				playing = true;
+				video.parentElement.classList.remove("paused");
+
+				progressUpdateInterval = setInterval(() => {
+					//console.log((video.currentTime / video.duration) * 100);
+					videoProgress.style.setProperty("--progress", (video.currentTime / video.duration) * 100);
+				}, 0);
 			}
 			video.onpause = function() {
-				audio.pause();
+				if (audio)
+					audio.pause();
+
+				playing = false;
+				video.parentElement.classList.add("paused");
+
+				clearInterval(progressUpdateInterval);
 			}
-		}
-	});
+
+			video.play();
+
+			if (audio) {
+				// console.log(`video: ${video.currentTime}, audio: ${audio.currentTime}, diff: ${video.currentTime - audio.currentTime}`);
+
+				// setInterval(() => {
+				// 	console.log(`video: ${video.currentTime}, audio: ${audio.currentTime}, diff: ${video.currentTime - audio.currentTime}`);
+				// }, 1000);
+			}
+		});
+
+		video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) {
+			if (playing) {
+				video.pause();
+			} else {
+				video.play();
+			}
+		})
+
+		video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) {
+			if (!event.target.classList.contains("slider") && audio) {
+				muted = !muted;
+
+				if (muted) {
+					video.parentElement.classList.add("muted");
+				} else {
+					video.parentElement.classList.remove("muted");
+				}
+
+				audio.volume = muted ? 0 : volume / 100;
+				audioSlider.value = muted ? 0 : volume;
+			}
+		});
+
+		videoProgress.addEventListener("mousedown", function(event) {
+			draggingVideoProgress = true;
+			setTimeout(() => {
+				if (draggingVideoProgress)
+					video.pause();
+			}, 100);
+		});
+
+		audioSlider.addEventListener("mousedown", function(event) {
+			draggingAudioSlider = true;
+		});
+
+		document.addEventListener("mousemove", function(event) {
+			if (draggingVideoProgress) {
+				const position = Math.round((event.clientX - videoProgress.getBoundingClientRect().left) / videoProgress.offsetWidth * 100);
+
+				videoProgress.style.setProperty("--progress", position);
+				video.currentTime = position / 100 * video.duration;
+
+				if (audio)
+					audio.currentTime = video.currentTime;
+			}
+
+			if (draggingAudioSlider) {
+				const position = Math.round(100 - (event.clientY - audioSlider.getBoundingClientRect().top) / audioSlider.offsetWidth * 100);
+
+				volume = Math.min(Math.max(position, 0), 100);
+				audio.volume = volume / 100;
+				audioSlider.style.setProperty("--volume", volume);
+
+				if (volume > 0) {
+					video.parentElement.classList.remove("muted");
+					muted = false;
+				} else {
+					video.parentElement.classList.add("muted");
+					muted = true;
+				}
+			}
+		});
+
+		document.addEventListener("mouseup", function(event) {
+			if (draggingVideoProgress) {
+				const position = Math.round((event.clientX - videoProgress.getBoundingClientRect().left) / videoProgress.offsetWidth * 100);
+
+				videoProgress.style.setProperty("--progress", position);
+				video.currentTime = position / 100 * video.duration;
+	
+				if (audio)
+					audio.currentTime = video.currentTime;
+	
+				if (position < 100)
+					video.play();
+			}
+
+			if (draggingAudioSlider) {
+				const position = Math.round(100 - (event.clientY - audioSlider.getBoundingClientRect().top) / audioSlider.offsetWidth * 100);
+
+				volume = Math.min(Math.max(position, 0), 100);;
+				audio.volume = volume / 100;
+				audioSlider.style.setProperty("--volume", volume);
+
+				if (volume > 0) {
+					video.parentElement.classList.remove("muted");
+					muted = false;
+				} else {
+					video.parentElement.classList.add("muted");
+					muted = true;
+				}
+			}
+
+			draggingVideoProgress = false;
+			draggingAudioSlider = false;
+		});
+	}
 }
 
 /**
@@ -590,15 +776,8 @@ async function renderPost(post, includeComments) {
  * @param {boolean} forceOverwrite - If set to true, it will remove old posts before loading new ones
  */
 function renderPosts(forceOverwrite) {
-	if (!currentSubreddits.length) {
-		if (document.querySelector(".empty-feed-warning") == null)
-			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
-
-		return;
-	}
-
 	// Check if the feed has been changed
-	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex || forceOverwrite) {
+	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex || forceOverwrite || !currentSubreddits.length) {
 		currentFeed.subreddits = currentSubreddits.slice();
 		currentFeed.filterIndex = currentFilterIndex;
 
@@ -619,6 +798,13 @@ function renderPosts(forceOverwrite) {
 		feedId++;
 	}
 
+	if (!currentSubreddits.length) {
+		if (document.querySelector(".empty-feed-warning") == null)
+			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+
+		return;
+	}
+
 	const url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json?limit=${maxPosts}${lastPost ? "&after=" + lastPost : ""}`;
 
 	fetch(url).then(function(result) {
@@ -629,18 +815,21 @@ function renderPosts(forceOverwrite) {
 			if (!posts.length)
 				addPost("<p>There doesn't seem to be anything here.</p>");
 
+			let skipped = 0;
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
 				console.log(post);
 
-				// Skip duplicate posts
+				// Skip duplicate and sensitive posts
 				const duplicatePost = document.querySelector(`[data-post-id="${post.id}"]`);
-				if ((duplicatePost != null && duplicatePost.id != "post-viewer") || (post.over_18 && !allowSensitiveContent))
+				if ((duplicatePost != null && duplicatePost.id != "post-viewer") || (post.over_18 && !allowSensitiveContent)) {
+					skipped++;
 					continue;
+				}
 
 				// Stop loading new posts if there's a new feed
-				if (postsList.children[i] == null || (postsList.children[i].id != "filter-list" && postsList.children[i].getAttribute("data-feed-id") != feedId))
+				if (postsList.children[i - skipped] == null || (postsList.children[i - skipped].id != "filter-list" && postsList.children[i - skipped].getAttribute("data-feed-id") != feedId))
 					break;
 
 				addPost(await renderPost(post, false));

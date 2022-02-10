@@ -16,7 +16,9 @@
 
 	--font-family: "noto sans", Sans-serif;
 	--page-width: 640px;
-	--shadow: 0 0 20px 5px var(--background-color-a);
+
+	--box-shadow: 0 0 20px 5px var(--background-color-a);
+	--drop-shadow: 0 0 20px var(--background-color-a);
 
 	--border-radius-a: 16px;
 	--border-radius-b: 9999px;
@@ -128,6 +130,16 @@ span {
 	justify-content: center;
 }
 
+.button.icon {
+	background: none;
+	padding: 0;
+}
+
+.button.icon:hover {
+	background: none;
+	color: var(--purple-a);
+}
+
 input, button, a, .slider, .filter {
 	-webkit-appearance: none;
     -moz-appearance: none;
@@ -149,6 +161,10 @@ a:hover {
 	color: var(--purple-b);
 }
 
+.hidden {
+	display: none;
+}
+
 /* #region INPUT */
 
 .input {
@@ -168,6 +184,15 @@ a:hover {
 .slider {
 	-webkit-appearance: none;
 	background: none;
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-radius: var(--border-radius-a);
+	background-color: var(--background-color-a);
+	transition: 200ms ease-in-out;
 }
 
 .slider::-webkit-slider-runnable-track {
@@ -241,19 +266,7 @@ a:hover {
 	height: 0;
 }
 
-.slider {
-	position: absolute;
-	cursor: pointer;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	border-radius: var(--border-radius-a);
-	background-color: var(--background-color-a);
-	transition: 200ms ease-in-out;
-}
-
-.slider:before {
+.switch .slider:before {
 	position: absolute;
 	content: "";
 	height: 1rem;
@@ -295,7 +308,7 @@ header {
 	top: 0;
 	box-sizing: border-box;
 	background-color: var(--background-color-c);
-	box-shadow: var(--shadow);
+	box-shadow: var(--box-shadow);
 	z-index: 9;
 }
 
@@ -382,7 +395,7 @@ header #search-bar {
 
 .subreddit-toggle-button:before, .feed-load-button:before {
 	content: "\f067";
-	font-family: "Font Awesome 6 Free";
+	font-family: "Font Awesome 5 Free";
 	font-weight: bold;
 }
 
@@ -507,6 +520,13 @@ header #search-bar {
 	margin-left: auto;
 }
 
+#options-list span .button-group {
+	margin-left: auto;
+	margin-top: 0;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
 /* #endregion */
 
 /* #region FEEDS */
@@ -557,12 +577,12 @@ header #search-bar {
 #posts-list .post .post-description {
 	max-height: 135px;
 	overflow: hidden;
-	mask-image: linear-gradient(180deg, var(--background-color-a) 60%,transparent);
+	mask-image: linear-gradient(180deg, var(--background-color-a) 60%, transparent);
 	-webkit-mask-image: linear-gradient(180deg, var(--background-color-a) 60%, transparent);
 }
 
 #posts-list .post .post-media-container .post-media.blur {
-	filter: blur(25px);
+	filter: blur(75px);
 	transition: 200ms ease-in-out;
 }
 
@@ -585,12 +605,18 @@ header #search-bar {
 	max-height: 75vh;
 }
 
+.post-media-inner-container {
+	position: relative;
+	overflow: hidden;
+	border-radius: inherit;
+}
+
 .post-media {
 	max-width: 100%;
 	height: 100%;
 	object-fit: contain;
 	border-radius: inherit;
-	box-shadow: var(--shadow);
+	box-shadow: var(--box-shadow);
 	overflow: hidden;
 }
 
@@ -639,6 +665,148 @@ header #search-bar {
 
 /* #endregion */
 
+/* #region VIDEO CONTROLS */
+
+.video-controls {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	cursor: auto;
+}
+
+.video-controls::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-image: linear-gradient(transparent 85%, var(--background-color-a));
+	opacity: 0;
+	transition: opacity 200ms ease-in-out;
+	pointer-events: none;
+}
+
+.video-controls.active:hover:after {
+	opacity: 1;
+}
+
+.video-controls > div {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	z-index: 5;
+}
+
+.primary-video-controls {
+	display: flex;
+	justify-content: center;
+    align-items: center;
+}
+
+.primary-video-controls .button.icon {
+    font-size: 3.5rem;
+	filter: drop-shadow(var(--drop-shadow));
+}
+
+.secondary-video-controls {
+	display: none;
+	opacity: 0;
+	transition: opacity 200ms ease-in-out;
+}
+
+.secondary-video-controls:hover {
+	opacity: 1;
+}
+
+.secondary-video-controls * {
+	font-size: 1.25rem;
+	/*filter: drop-shadow(var(--drop-shadow));*/
+}
+
+.post-media-inner-container.paused .video-controls .secondary-video-controls #pause::before {
+	content: "\f04b";
+}
+
+.secondary-video-controls #progress {
+	position: relative;
+	height: 1rem;
+	flex-grow: 1;
+	background-color: var(--background-color-a);
+	border-radius: var(--border-radius-b);
+	overflow: hidden;
+	cursor: pointer;
+}
+
+.secondary-video-controls #progress::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: calc(var(--progress) * 1%);
+	background-color: var(--text-color-a);
+	border-radius: inherit;
+}
+
+.secondary-video-controls #volume {
+	position: relative;
+}
+
+.secondary-video-controls #volume .slider {
+    position: absolute;
+	display: flex;
+	align-items: flex-end;
+	top: -4.25rem;
+    left: -1rem;
+    width: 4.5rem;
+    height: 1rem;
+	transform-origin: bottom;
+	transform: rotate(-90deg);
+	opacity: 0;
+	transition: opacity 200ms ease-in-out;
+	overflow: hidden;
+}
+
+.secondary-video-controls #volume:hover .slider {
+	opacity: 1;
+}
+
+.secondary-video-controls #volume .slider::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: calc(var(--volume) * 1%);
+    background-color: var(--text-color-a);
+    border-radius: inherit;
+}
+
+.post-media-inner-container.muted .video-controls .secondary-video-controls #volume::before {
+	content: "\f6a9";
+	--height: 0%;
+}
+
+.video-controls.active .secondary-video-controls {
+	display: flex;
+	gap: 1rem;
+    justify-content: space-between;
+	align-items: flex-end;
+    padding: 20px;
+	box-sizing: border-box;
+}
+
+.video-controls.active .primary-video-controls {
+	display: none;
+}
+
+/* #endregion */
+
 /* #region POST VIEWER */
 
 #post-viewer {
@@ -676,7 +844,7 @@ header #search-bar {
 #post-viewer .post {
 	width: var(--page-width);
 	margin: 65px auto 20px auto;
-	box-shadow: var(--shadow);
+	box-shadow: var(--box-shadow);
 	box-sizing: border-box;
 }
 
@@ -731,7 +899,7 @@ header #search-bar {
 	font-size: 1.25rem;
 	background-color: var(--background-color-c);
 	border-radius: var(--border-radius-b);
-	box-shadow: var(--shadow);
+	box-shadow: var(--box-shadow);
     transform: translateY(75px);
 }
 
@@ -808,7 +976,7 @@ header #search-bar {
 	}
 
 	#side-menu > div > div {
-		box-shadow: var(--shadow);
+		box-shadow: var(--box-shadow);
 	}
 	
 	#posts-list {
