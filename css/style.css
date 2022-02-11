@@ -772,7 +772,7 @@ header #search-bar {
 	overflow: hidden;
 }
 
-.secondary-video-controls #volume:hover .slider {
+.secondary-video-controls #volume .slider.active {
 	opacity: 1;
 }
 

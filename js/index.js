@@ -453,7 +453,7 @@ function setUpPage() {
 	});
 
 	// Set up click events
-	document.addEventListener("click", event => {
+	document.addEventListener("mousedown", event => {
 		let element = event.target;
 
 		if (!header.contains(element) || element.id == "side-menu-toggle")
@@ -470,13 +470,11 @@ function setUpPage() {
 
 		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (!element.classList.contains("blur") && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post") && element.closest(".post").querySelector("video") == null) {
+		} else if (!element.classList.contains("blur") && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post") && !element.closest(".post").querySelector(".post-media-container .post-media-inner-container").contains(element)) {
 			showPostViewer(element.closest(".post").getAttribute("data-post-id"));
 		}
 
-		console.log(element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media.blur"));
-
-		if (element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media") != null)
+		if (element.closest(".post") && element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media") != null)
 			element = element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media");
 
 		if (element.classList.contains("blur"))
@@ -547,16 +545,14 @@ async function addPost(html) {
 		let playing = false;
 		let muted = false;
 		let volume = audioSlider.value;
+
 		let draggingVideoProgress = false;
 		let draggingAudioSlider = false;
 
+		let hoveringAudioSlider = false;
+
 		video.parentElement.querySelector(".primary-video-controls").addEventListener("click", async function(event) {
 			event.target.closest(".video-controls").classList.add("active");
-
-			// if (audio) {
-			// 	console.log(`video: ${video.currentTime}, audio: ${audio.currentTime}, diff: ${video.currentTime - audio.currentTime}`);
-			// 	console.log(video.readyState, audio.readyState);
-			// }
 
 			let progressUpdateInterval = null;
 
@@ -579,7 +575,6 @@ async function addPost(html) {
 				video.parentElement.classList.remove("paused");
 
 				progressUpdateInterval = setInterval(() => {
-					//console.log((video.currentTime / video.duration) * 100);
 					videoProgress.style.setProperty("--progress", (video.currentTime / video.duration) * 100);
 				}, 0);
 			}
@@ -587,21 +582,14 @@ async function addPost(html) {
 				if (audio)
 					audio.pause();
 
-				playing = false;
+				if (!draggingVideoProgress)
+					playing = false;
 				video.parentElement.classList.add("paused");
 
 				clearInterval(progressUpdateInterval);
 			}
 
 			video.play();
-
-			if (audio) {
-				// console.log(`video: ${video.currentTime}, audio: ${audio.currentTime}, diff: ${video.currentTime - audio.currentTime}`);
-
-				// setInterval(() => {
-				// 	console.log(`video: ${video.currentTime}, audio: ${audio.currentTime}, diff: ${video.currentTime - audio.currentTime}`);
-				// }, 1000);
-			}
 		});
 
 		video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) {
@@ -640,6 +628,9 @@ async function addPost(html) {
 		});
 
 		document.addEventListener("mousemove", function(event) {
+			if (draggingVideoProgress || draggingAudioSlider)
+				event.preventDefault();
+
 			if (draggingVideoProgress) {
 				const position = Math.round((event.clientX - videoProgress.getBoundingClientRect().left) / videoProgress.offsetWidth * 100);
 
@@ -677,7 +668,7 @@ async function addPost(html) {
 				if (audio)
 					audio.currentTime = video.currentTime;
 	
-				if (position < 100)
+				if (position < 100 && playing)
 					video.play();
 			}
 
@@ -697,9 +688,32 @@ async function addPost(html) {
 				}
 			}
 
+			if (audio && !hoveringAudioSlider)
+				audioSlider.classList.remove("active");
+
 			draggingVideoProgress = false;
 			draggingAudioSlider = false;
 		});
+
+		if (audio) {
+			audioSlider.parentElement.addEventListener("mouseenter", function(event) {
+				hoveringAudioSlider = true;
+				audioSlider.classList.add("active");
+			});
+	
+			audioSlider.parentElement.addEventListener("mouseleave", function(event) {
+				hoveringAudioSlider = false;
+				setTimeout(() => {
+					if (!draggingAudioSlider && !hoveringAudioSlider)
+						audioSlider.classList.remove("active");
+				}, 350);
+			});
+
+			audioSlider.parentElement.addEventListener("mouseleave", function(event) {
+				if (!draggingAudioSlider)
+					audioSlider.classList.remove("active");
+			});
+		}
 	}
 }
 
