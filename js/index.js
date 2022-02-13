@@ -823,6 +823,9 @@ class videoControls {
 				that.updateAudioSlider(event);
 			});
 		}
+
+		const height = this.video.offsetWidth;
+		this.video.parentElement.style.width = height + "px";
 	}
 
 	startVideo(event) {

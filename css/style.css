@@ -670,9 +670,9 @@ header #search-bar {
 .video-controls {
 	position: absolute;
 	top: 0;
-	left: 0;
+	left: -1px;
 	height: 100%;
-	width: 100%;
+	width: calc(100% + 2px);
 	border-radius: inherit;
 	overflow: hidden;
 	cursor: auto;
@@ -791,7 +791,7 @@ header #search-bar {
 
 .post-media-inner-container.muted .video-controls .secondary-video-controls #volume::before {
 	content: "\f6a9";
-	--height: 0%;
+	--volume: 0%;
 }
 
 .video-controls.active .secondary-video-controls {
