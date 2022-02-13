@@ -45,7 +45,6 @@ const feedName = document.querySelector("#feed-name");
 const subredditOptions = document.querySelector("#subreddit-options");
 const postViewer = document.querySelector("#post-viewer");
 const scrollUp = document.querySelector("#scroll-up");
-const videoControls = document.getElementById("video-controls");
 
 // Meta settings
 let feedId = 0;
@@ -507,214 +506,7 @@ async function addPost(html) {
 
 	const post = postsList.appendChild(div.firstChild);
 
-	// Set up video
-	const video = post.querySelector("video.post-media");
-	if (video != null) {
-		video.controls = false;
-
-		const controlsDiv = document.createElement("div");
-		controlsDiv.innerHTML = `<div class="video-controls" id="video-controls">
-				<div class="primary-video-controls">
-					<i class="button icon fa-solid fa-play"></i>
-				</div>
-				<div class="secondary-video-controls">
-					<i id="pause" class="button icon fa-solid fa-pause"></i>
-					<div id="progress"></div>
-					<i id="volume" class="button icon fa-solid fa-volume-high">
-						<div class="slider"></div>
-					</i>
-				</div>
-			</div>`;
-
-		video.parentElement.appendChild(controlsDiv.firstChild);
-
-		const audio = video.querySelector("audio");
-		const audioSlider = video.parentElement.querySelector(".secondary-video-controls #volume .slider");
-		const videoProgress = video.parentElement.querySelector(".secondary-video-controls #progress");
-
-		if (!audio) {
-			video.parentElement.classList.add("muted");
-			audioSlider.style.display = "none";
-			audioSlider.parentElement.style.cursor = "auto";
-			audioSlider.parentElement.style.color = "inherit";
-		} else {
-			audioSlider.value = 100;
-			audioSlider.style.setProperty("--volume", 100);
-		}
-
-		let playing = false;
-		let muted = false;
-		let volume = audioSlider.value;
-
-		let draggingVideoProgress = false;
-		let draggingAudioSlider = false;
-
-		let hoveringAudioSlider = false;
-
-		video.parentElement.querySelector(".primary-video-controls").addEventListener("click", async function(event) {
-			event.target.closest(".video-controls").classList.add("active");
-
-			let progressUpdateInterval = null;
-
-			video.onplay = function() {
-				if (audio) {
-					audio.currentTime = video.currentTime;
-					audio.play();
-				}
-
-				video.play();
-
-				// Keep audio in sync
-				if (audio)
-					setInterval(() => {
-						if (Math.abs(video.currentTime - audio.currentTime) > 0.2)
-							audio.currentTime = video.currentTime;
-					}, 100);
-
-				playing = true;
-				video.parentElement.classList.remove("paused");
-
-				progressUpdateInterval = setInterval(() => {
-					videoProgress.style.setProperty("--progress", (video.currentTime / video.duration) * 100);
-				}, 0);
-			}
-			video.onpause = function() {
-				if (audio)
-					audio.pause();
-
-				if (!draggingVideoProgress)
-					playing = false;
-				video.parentElement.classList.add("paused");
-
-				clearInterval(progressUpdateInterval);
-			}
-
-			video.play();
-		});
-
-		video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) {
-			if (playing) {
-				video.pause();
-			} else {
-				video.play();
-			}
-		})
-
-		video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) {
-			if (!event.target.classList.contains("slider") && audio) {
-				muted = !muted;
-
-				if (muted) {
-					video.parentElement.classList.add("muted");
-				} else {
-					video.parentElement.classList.remove("muted");
-				}
-
-				audio.volume = muted ? 0 : volume / 100;
-				audioSlider.value = muted ? 0 : volume;
-			}
-		});
-
-		videoProgress.addEventListener("mousedown", function(event) {
-			draggingVideoProgress = true;
-			setTimeout(() => {
-				if (draggingVideoProgress)
-					video.pause();
-			}, 100);
-		});
-
-		audioSlider.addEventListener("mousedown", function(event) {
-			draggingAudioSlider = true;
-		});
-
-		document.addEventListener("mousemove", function(event) {
-			if (draggingVideoProgress || draggingAudioSlider)
-				event.preventDefault();
-
-			if (draggingVideoProgress) {
-				const position = Math.round((event.clientX - videoProgress.getBoundingClientRect().left) / videoProgress.offsetWidth * 100);
-
-				videoProgress.style.setProperty("--progress", position);
-				video.currentTime = position / 100 * video.duration;
-
-				if (audio)
-					audio.currentTime = video.currentTime;
-			}
-
-			if (draggingAudioSlider) {
-				const position = Math.round(100 - (event.clientY - audioSlider.getBoundingClientRect().top) / audioSlider.offsetWidth * 100);
-
-				volume = Math.min(Math.max(position, 0), 100);
-				audio.volume = volume / 100;
-				audioSlider.style.setProperty("--volume", volume);
-
-				if (volume > 0) {
-					video.parentElement.classList.remove("muted");
-					muted = false;
-				} else {
-					video.parentElement.classList.add("muted");
-					muted = true;
-				}
-			}
-		});
-
-		document.addEventListener("mouseup", function(event) {
-			if (draggingVideoProgress) {
-				const position = Math.round((event.clientX - videoProgress.getBoundingClientRect().left) / videoProgress.offsetWidth * 100);
-
-				videoProgress.style.setProperty("--progress", position);
-				video.currentTime = position / 100 * video.duration;
-	
-				if (audio)
-					audio.currentTime = video.currentTime;
-	
-				if (position < 100 && playing)
-					video.play();
-			}
-
-			if (draggingAudioSlider) {
-				const position = Math.round(100 - (event.clientY - audioSlider.getBoundingClientRect().top) / audioSlider.offsetWidth * 100);
-
-				volume = Math.min(Math.max(position, 0), 100);;
-				audio.volume = volume / 100;
-				audioSlider.style.setProperty("--volume", volume);
-
-				if (volume > 0) {
-					video.parentElement.classList.remove("muted");
-					muted = false;
-				} else {
-					video.parentElement.classList.add("muted");
-					muted = true;
-				}
-			}
-
-			if (audio && !hoveringAudioSlider)
-				audioSlider.classList.remove("active");
-
-			draggingVideoProgress = false;
-			draggingAudioSlider = false;
-		});
-
-		if (audio) {
-			audioSlider.parentElement.addEventListener("mouseenter", function(event) {
-				hoveringAudioSlider = true;
-				audioSlider.classList.add("active");
-			});
-	
-			audioSlider.parentElement.addEventListener("mouseleave", function(event) {
-				hoveringAudioSlider = false;
-				setTimeout(() => {
-					if (!draggingAudioSlider && !hoveringAudioSlider)
-						audioSlider.classList.remove("active");
-				}, 350);
-			});
-
-			audioSlider.parentElement.addEventListener("mouseleave", function(event) {
-				if (!draggingAudioSlider)
-					audioSlider.classList.remove("active");
-			});
-		}
-	}
+	addVideoControls(post);
 }
 
 /**
@@ -833,7 +625,7 @@ function renderPosts(forceOverwrite) {
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
 
-				console.log(post);
+				// console.log(post);
 
 				// Skip duplicate and sensitive posts
 				const duplicatePost = document.querySelector(`[data-post-id="${post.id}"]`);
@@ -879,6 +671,8 @@ function renderPosts(forceOverwrite) {
 
 			postViewer.innerHTML = await renderPost(post, true);
 
+			addVideoControls(postViewer);
+
 			if (threads.length) {
 				for (let i = 0; i < threads.length; i++) {
 					const comment = await renderComment(threads[i]);
@@ -893,6 +687,7 @@ function renderPosts(forceOverwrite) {
 
 					if (i == 0)
 						postViewer.firstChild.querySelector("#loading-comments").remove();
+
 					postViewer.firstChild.appendChild(div);
 				}
 			}
@@ -926,6 +721,304 @@ function hidePostViewer() {
 		}
 
 	document.body.style.overflow = null;
+}
+
+//#endregion
+
+//#region VIDEO CONTROLS
+
+class videoControls {
+	constructor(video) {
+		const that = this;
+
+		this.video = video;
+		this.video.controls = false;
+
+		const controlsDiv = document.createElement("div");
+		controlsDiv.innerHTML = `<div class="video-controls" id="video-controls">
+				<div class="primary-video-controls">
+					<i class="button icon fa-solid fa-play"></i>
+				</div>
+				<div class="secondary-video-controls">
+					<i id="pause" class="button icon fa-solid fa-pause"></i>
+					<div id="progress"></div>
+					<i id="volume" class="button icon fa-solid fa-volume-high">
+						<div class="slider"></div>
+					</i>
+				</div>
+			</div>`;
+
+		this.video.parentElement.appendChild(controlsDiv.firstChild);
+
+		this.audio = this.video.querySelector("audio");
+		this.audioSlider = this.video.parentElement.querySelector(".secondary-video-controls #volume .slider");
+		this.videoProgress = this.video.parentElement.querySelector(".secondary-video-controls #progress");
+
+		if (!this.audio) {
+			this.video.parentElement.classList.add("muted");
+			this.audioSlider.style.display = "none";
+			this.audioSlider.parentElement.style.cursor = "auto";
+			this.audioSlider.parentElement.style.color = "inherit";
+		} else {
+			this.setVolume(100);
+		}
+
+		this.started = false;
+		this.playing = false;
+		this.manuallyPaused = false;
+		this.visible = this.isVisible(this.video);
+
+		this.draggingVideoProgress = false;
+		this.draggingAudioSlider = false;
+
+		this.hoveringAudioSlider = false;
+
+		this.video.addEventListener("contextmenu", function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		});
+
+		this.video.parentElement.querySelector(".primary-video-controls").addEventListener("click", function(event) {
+			that.startVideo(event);
+		});
+
+		this.video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) {
+			that.togglePause();
+		});
+
+		this.video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) {
+			that.toggleVolume(event);
+		});
+
+		this.videoProgress.addEventListener("mousedown", function(event) {
+			that.updateVideoProgress(event);
+		});
+
+		this.videoProgress.addEventListener("touchstart", function(event) {
+			that.updateVideoProgress(event);
+		});
+
+		document.addEventListener("mousemove", function(event) {
+			that.onMouseMove(event);
+		});
+
+		document.addEventListener("mouseup", function(event) {
+			that.onMouseUp(event);
+		});
+
+		document.addEventListener("scroll", function(event) {
+			that.onScroll(event);
+		});
+
+		if (this.audio) {
+			this.audioSlider.parentElement.addEventListener("mouseenter", function(event) {
+				that.updateAudioSlider(event);
+			});
+	
+			this.audioSlider.parentElement.addEventListener("mouseleave", function(event) {
+				that.updateAudioSlider(event);
+			});
+
+			this.audioSlider.addEventListener("mousedown", function(event) {
+				that.updateAudioSlider(event);
+			});
+		}
+	}
+
+	startVideo(event) {
+		event.target.closest(".video-controls").classList.add("active");
+
+		this.progressUpdateInterval = null;
+		this.started = true;
+
+		const that = this;
+		this.video.onplay = function() {
+			that.onVideoPlay(that);
+		};
+		this.video.onpause = function() {
+			that.onVideoPause(that);
+		};
+
+		this.video.play();
+	}
+
+	onVideoPlay() {
+		if (this.audio) {
+			this.audio.currentTime = this.video.currentTime;
+			this.audio.play();
+		}
+
+		this.video.play();
+
+		// Keep audio in sync
+		if (this.audio)
+			setInterval(() => {
+				if (Math.abs(this.video.currentTime - this.audio.currentTime) > 0.2)
+					this.audio.currentTime = this.video.currentTime;
+			}, 100);
+
+		this.playing = true;
+		this.manuallyPaused = false;
+		this.video.parentElement.classList.remove("paused");
+
+		this.progressUpdateInterval = setInterval(() => {
+			this.videoProgress.style.setProperty("--progress", (this.video.currentTime / this.video.duration) * 100);
+		}, 0);
+	}
+
+	onVideoPause() {
+		if (this.audio)
+			this.audio.pause();
+
+		if (!this.draggingVideoProgress)
+			this.playing = false;
+		this.video.parentElement.classList.add("paused");
+
+		if (this.visible)
+			this.manuallyPaused = true;
+
+		clearInterval(this.progressUpdateInterval);
+	}
+
+	togglePause() {
+		if (this.playing) {
+			this.video.pause();
+		} else {
+			this.video.play();
+		}
+	}
+
+	setVideoTime(value) {
+		value = Math.min(Math.max(value, 0), 100);
+		this.videoProgress.style.setProperty("--progress", value);
+		this.video.currentTime = value / 100 * this.video.duration;
+
+		if (this.audio)
+			this.audio.currentTime = this.video.currentTime;
+	}
+
+	toggleVolume(event) {
+		if (!event.target.classList.contains("slider") && this.audio) {
+			this.muted = !this.muted;
+
+			if (this.muted) {
+				this.video.parentElement.classList.add("muted");
+			} else {
+				this.video.parentElement.classList.remove("muted");
+			}
+
+			this.audio.volume = this.muted ? 0 : this.volume / 100;
+			this.audioSlider.style.setProperty("--volume", this.audio.volume * 100);
+		}
+	}
+
+	setVolume(value) {
+		this.volume = Math.min(Math.max(value, 0), 100);
+		this.audio.volume = this.volume / 100;
+		this.audioSlider.style.setProperty("--volume", this.volume);
+
+		if (this.volume > 0) {
+			this.video.parentElement.classList.remove("muted");
+			this.muted = false;
+		} else {
+			this.video.parentElement.classList.add("muted");
+			this.muted = true;
+		}
+	}
+
+	updateVideoProgress(event) {
+		if (event.type == "mousedown") {
+			this.draggingVideoProgress = true;
+			setTimeout(() => {
+				if (this.draggingVideoProgress)
+					this.video.pause();
+			}, 100);
+		} else if (event.type == "mousemove" && this.draggingVideoProgress) {
+			const position = Math.round((event.clientX - this.videoProgress.getBoundingClientRect().left) / this.videoProgress.offsetWidth * 100);
+			this.setVideoTime(position);
+		} else if (event.type == "mouseup" && this.draggingVideoProgress) {
+			const position = Math.round((event.clientX - this.videoProgress.getBoundingClientRect().left) / this.videoProgress.offsetWidth * 100);
+			this.setVideoTime(position);
+
+			if (position < 100 && this.playing)
+				this.video.play();
+		}
+	}
+
+	updateAudioSlider(event) {
+		if (event.type == "mouseenter") {
+			this.hoveringAudioSlider = true;
+			this.audioSlider.classList.add("active");
+		} else if (event.type == "mouseleave") {
+			this.hoveringAudioSlider = false;
+
+			setTimeout(() => {
+				if (!this.draggingAudioSlider && !this.hoveringAudioSlider)
+					this.audioSlider.classList.remove("active");
+			}, 350);
+
+			if (!this.draggingAudioSlider)
+					this.audioSlider.classList.remove("active");
+		} else if (event.type == "mousedown") {
+			this.draggingAudioSlider = true;
+		} else if (event.type == "mouseup" || event.type == "mousemove") {
+			if (this.draggingAudioSlider) {
+				const position = Math.round(100 - (event.clientY - this.audioSlider.getBoundingClientRect().top) / this.audioSlider.offsetWidth * 100);
+				this.setVolume(position);
+			}
+
+			if (this.audio && !this.hoveringAudioSlider && event.type == "mouseup")
+				this.audioSlider.classList.remove("active");
+		}
+	}
+
+	onMouseMove(event) {
+		if (this.draggingVideoProgress || this.draggingAudioSlider)
+			event.preventDefault();
+
+		this.updateVideoProgress(event);
+		this.updateAudioSlider(event);
+	}
+
+	onMouseUp(event) {
+		this.updateVideoProgress(event);
+		this.updateAudioSlider(event);
+
+		this.draggingVideoProgress = false;
+		this.draggingAudioSlider = false;
+	}
+
+	onScroll(event) {
+		this.visible = this.isVisible(this.video);
+
+		if (this.started) {
+			if (this.visible && !this.playing && !this.manuallyPaused) {
+				this.video.play();
+				console.log("playing");
+			} else if (!this.visible && this.playing && !this.manuallyPaused) {
+				this.video.pause();
+				console.log("pausing");
+			}
+		}
+	}
+
+	isVisible(element) {
+		const top = element.getBoundingClientRect().top;
+		const bottom = element.getBoundingClientRect().bottom;
+		if (window.innerHeight > top && bottom > 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
+function addVideoControls(post) {
+	// Set up video
+	const video = post.querySelector("video.post-media");
+
+	if (video != null)
+		new videoControls(video);
 }
 
 //#endregion
@@ -1088,7 +1181,7 @@ function loadFeed(name) {
 //#region SCROLLING
 
 document.addEventListener("scroll", function(event) {
-	const lastPostTop = document.querySelector("#posts-list > div:last-child").getBoundingClientRect().top;
+	const lastPostTop = document.querySelector("#posts-list .post:last-child").getBoundingClientRect().top;
 	const screenBottom = window.innerHeight;
 
 	// Check if the last post is visible
