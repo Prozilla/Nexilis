@@ -4,14 +4,15 @@ const div = document.createElement("div");
 // True if the website is hosted locally
 let localHosting = false;
 
+let base = "/";
 if (window.location.pathname.startsWith("/spreddit/"))
 {
 	localHosting = true;
-
-	// Add base url
-	div.innerHTML = "<base href=\"/spreddit/\">";
-	head.appendChild(div.firstChild);
+	base = "/spreddit/";
 }
+
+div.innerHTML = `<base href="${base}">`;
+head.appendChild(div.firstChild);
 
 const headUrl = localHosting ? "/spreddit/head.html" : "/head.html";
 
