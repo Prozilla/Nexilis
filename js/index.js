@@ -56,6 +56,9 @@ let lastPostId;
 let loadingNewPosts = false;
 let allowSensitiveContent = false;
 
+// Fallback media
+const fallbackSubredditIcon = "media/Dragon.svg";
+
 // Style properties
 const style = getComputedStyle(document.querySelector(":root"));
 const defaultColors = [
@@ -226,10 +229,10 @@ async function renderPostMedia(post) {
  * @param {Object} comment - The comment on top of the thread that needs to be rendered
  * @returns {string} Comment and its replies in html format
  */
- async function renderComment(comment) {
+async function renderComment(comment) {
 	let replies = comment.data.replies ? Array.from(comment.data.replies.data.children) : null;
 
-	// Get user icon
+	// Get user icon (use default Reddit avatars as fallback)
 	let icon = `https://www.redditstatic.com/avatars/defaults/v2/avatar_default_${Math.floor(Math.random() * 7)}.png`;
 	if (comment.data.author != "[deleted]")
 		icon = await fetch(`https://www.reddit.com/user/${comment.data.author}/about.json`).then((result) => result.json()).then(result => {
@@ -276,7 +279,7 @@ async function renderPostMedia(post) {
  * @returns {string} Subreddit icon in html format
  */
 async function getSubredditIcon(subreddit) {
-	let subredditIcon = "<img class=\"subreddit-icon\" src=\"media/logo.png\">";
+	let subredditIcon = `<img class="subreddit-icon" src="${fallbackSubredditIcon}">`;
 	if (subreddit != "all") {
 		await fetch(`https://www.reddit.com/r/${subreddit}/about.json`).then(function(result) {
 			return result.json();
@@ -500,6 +503,9 @@ function setUpPage() {
 	const headerLoadInterval = setInterval(function() {
 		if (document.querySelector("header")) {
 			clearInterval(headerLoadInterval);
+		
+			if (localHosting)
+				document.querySelector("#logo").href = "/spreddit/";
 
 			searchInput = document.querySelector("#search-bar input");
 			searchResultList = document.querySelector("#search-bar #search-results");
@@ -655,7 +661,7 @@ function renderUser(user) {
 function renderSubreddit(subreddit) {
 	const name = subreddit.display_name;
 	const members = getFormattedNumber(subreddit.subscribers);
-	const icon = subreddit.community_icon ? subreddit.community_icon : "media/logo.png";
+	const icon = subreddit.community_icon ? subreddit.community_icon : fallbackSubredditIcon;
 	const banner = subreddit.banner_background_image ? `<img class="subreddit-banner" src="${subreddit.banner_background_image}">` : "";
 	const id = subreddit.id;
 	const description = subreddit.public_description_html ? subreddit.public_description_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
@@ -1243,11 +1249,18 @@ function toggleFilter(index, allowNone) {
 
 	let none = true;
 	for (let i = 0; i < filterList.children.length; i++) {
-		if ((i == index && !filterList.children[i].classList.contains("active")) || (!allowNone && filterList.children[i].classList.contains("active"))) {
-			filterList.children[i].classList.add("active");
+		const filterButton = filterList.children[i];
+		const isActive = filterButton.classList.contains("active");
+		const isClicked = i == index;
+
+		if (isClicked && isActive && !allowNone)
+			return;
+
+		if ((!isClicked && isActive) || (isClicked && isActive && allowNone)) {
+			filterButton.classList.remove("active");
+		} else if (isClicked) {
+			filterButton.classList.add("active");
 			none = false;
-		} else if (filterList.children[i].classList.contains("active")) {
-			filterList.children[i].classList.remove("active");
 		}
 	}
 

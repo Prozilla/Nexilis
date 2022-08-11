@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 640 640"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="Dragon.svg"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   width="640"
+   height="640"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     showgrid="false"
+     inkscape:zoom="1.1689359"
+     inkscape:cx="300.70083"
+     inkscape:cy="295.56796"
+     inkscape:window-width="2560"
+     inkscape:window-height="1377"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <!--! Font Awesome Pro 6.1.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. -->
+  <g
+     id="g1187">
+    <path
+       d="m 31.166706,308.00292 157.333504,-28.82529 -82.66875,62.18286 c -9.182401,9.24585 -2.71937,24.83688 10.1523,24.83688 H 317.85142 C 309.241,342.1763 304.4812,316.79554 304.4812,290.6171 V 252.16525 L 196.02379,172.94104 c -21.57364,-14.43078 -50.127,-12.7357 -69.79709,3.9884 L 19.718172,282.44087 c -11.2056049,9.42714 -3.049317,27.55625 11.448534,25.56205 z M 535.854,338.91305 444.57391,293.36366 c -14.7299,-7.36495 -24.02107,-22.43477 -24.02107,-38.97759 v -33.2216 h 58.00409 l 25.48954,20.50403 c 5.42967,5.42061 12.77196,8.50255 20.47683,8.50255 h 27.28431 c 10.06166,0 20.95726,-6.23188 25.83399,-16.08959 l 13.02577,-25.94276 c 4.87129,-9.85316 3.85243,-21.52832 -2.71846,-30.36626 L 520.42702,87.697951 C 514.91487,80.437241 507.11935,76.131577 498.0548,76.131577 H 282.77159 c -6.43584,0 -9.60843,7.81818 -5.07615,12.345925 l 55.02186,45.667238 -53.20895,22.43477 c -5.32452,2.71937 -5.32452,10.3064 0,13.02577 l 53.20895,22.55261 -9.1e-4,98.44108 c 0,65.2648 32.62333,126.35992 87.01067,162.61814 -152.49382,8.68502 -237.38367,37.16468 -318.69274,55.18501 -7.364043,1.5863 -12.572536,8.15811 -12.572536,15.7542 0.840556,8.82888 8.091022,16.08052 16.924436,16.08052 h 377.61235 c 57.32425,0 108.41209,-43.05664 110.67823,-100.43527 3.00037,-42.78471 -19.84231,-81.85295 -57.8228,-100.88852 z m -78.04584,-202.7288 41.46129,10.31547 c -2.49276,9.97102 -11.33069,17.11389 -21.86371,16.54281 -11.80205,-0.57106 -23.49533,-11.33069 -19.59758,-26.85828 z"
+       id="path2"
+       style="fill:#dd00ff;fill-opacity:1;stroke-width:0.906456"
+       sodipodi:nodetypes="cccscscccccccscccssccccsscccccccccsscccccc" />
+  </g>
+</svg>

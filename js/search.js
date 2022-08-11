@@ -53,7 +53,7 @@ async function renderSearchResults(forceOverwrite) {
 	
 	const url = `https://www.reddit.com/search/.json?q=${searchQuery}${currentFilterIndex != 0 ? "&limit=" + maxPosts : ""}${lastPostId ? "&after=" + lastPostId : ""}&type=${currentFilterIndex != null ? searchFilters[currentFilterIndex] : searchFilters.join("%2C")}&sort=relevance${allowSensitiveContent ? "&include_over_18=1" : ""}`;
 
-	console.log(url);
+	// console.log(url);
 
 	fetch(url).then(function(result) {
 		return result.json();
@@ -72,7 +72,7 @@ async function renderSearchResults(forceOverwrite) {
 			for (let i = 0; i < searchResults.length; i++) {
 				const searchResult = searchResults[i].data;
 
-				console.log(searchResult);
+				// console.log(searchResult);
 	
 				// Skip duplicate and sensitive results
 				const duplicateSearchResult = document.querySelector(`[data-post-id="${searchResult.id}"]`);

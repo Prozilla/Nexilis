@@ -14,7 +14,8 @@
 	--yellow: #ffe800;
 	--green: #00ff6c;
 
-	--font-family: "noto sans", Sans-serif;
+	--title-font: "Roboto", sans-serif;
+	--body-font: "Roboto", Sans-serif;
 	--page-width: 640px;
 
 	--box-shadow-a: 0 0 20px 5px var(--background-color-a);
@@ -31,7 +32,7 @@
 html {
 	color: var(--text-color-a);
 	background-color: var(--background-color-a);
-	font-family: var(--font-family);
+	font-family: var(--body-font);
 
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -55,17 +56,24 @@ body {
 }
 
 * {
-	font-family: var(--font-family);
+	font-family: var(--body-font);
 }
 
-p, li, h2, button, input, a {
+p, li, input, a {
 	font-size: 1rem;
 	font-weight: normal;
 }
 
-h1, #post-viewer .post-title {
+h1, #post-viewer .post-title, .post .post-title {
 	font-size: 1.25rem;
 	font-weight: bold;
+	font-family: var(--title-font);
+}
+
+h2, button {
+	font-size: 1rem;
+	font-weight: normal;
+	font-family: var(--title-font);
 }
 
 hr {
@@ -327,6 +335,10 @@ header #logo {
 
 header #logo:hover {
 	color: var(--purple-b);
+}
+
+header #logo img {
+	width: 100%;
 }
 
 header #page-title {
