@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<head lang="en">
+	<!-- TAGS -->
+	<title>Nexilis - search results</title>
+	<meta name="description" content="A Reddit clone made by Prozilla powered by the Reddit API. Add your favourite subreddits, choose a sort option and start browsing your custom feed!">
+
+	<!-- STYLE -->
+	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="../css/search.css">
+	<script rel="preconnect" src="https://kit.fontawesome.com/241f6baf1e.js" crossorigin="anonymous"></script>
+
+	<!-- LOAD head.html -->
+	<script src="../js/loader.js"></script>
+</head>
+<body>
+	<main id="page-content">
+		<div id="results-list">
+			<div id="filter-list" class="box">
+				<div class="filter" onclick="toggleFilter(0, true)">
+					<i class="fa-solid fa-user-group"></i>
+					<p>Communities</p>
+				</div>
+				<div class="filter" onclick="toggleFilter(1, true)">
+					<i class="fa-solid fa-message"></i>
+					<p>Posts</p>
+				</div>
+				<div class="filter" onclick="toggleFilter(2, true)">
+					<i class="fa-solid fa-user"></i>
+					<p>Users</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- scroll up -->
+		<a id="scroll-up" class="button" onclick="scrollToTop()">
+			<i class="fas fa-rocket"></i>
+			<p>Scroll to top</p>
+		</a>
+
+		<!-- post viewer -->
+		<div id="post-viewer">
+
+		</div>
+	</main>
+</body>

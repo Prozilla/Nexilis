@@ -28,29 +28,31 @@ let currentFeed = {
 };
 
 // List elements
-const postsList = document.querySelector("#posts-list");
+let postsList = document.querySelector("#posts-list");
 const filterList = document.querySelector("#filter-list");
 const subredditList = document.querySelector("#subreddits-list ul");
-const searchResultList = document.querySelector("#search-results");
 const customFeedsList = document.querySelector("#feeds-list");
 
 // Input elements
-const searchInput = document.querySelector("#search-bar input");
 const hideSensitiveContentToggle = document.querySelector("#sensitive-content");
 
 const sideMenu = document.querySelector("#side-menu");
 const pageContent = document.querySelector("#page-content");
-const header = document.querySelector("header");
 const feedName = document.querySelector("#feed-name");
 const subredditOptions = document.querySelector("#subreddit-options");
 const postViewer = document.querySelector("#post-viewer");
 const scrollUp = document.querySelector("#scroll-up");
 
+// Header
+let header;
+let searchInput;
+let searchResultList;
+
 // Meta settings
 let feedId = 0;
 const maxPosts = 10;
 let postCount = 0;
-let lastPost;
+let lastPostId;
 let loadingNewPosts = false;
 let allowSensitiveContent = false;
 
@@ -66,18 +68,13 @@ const defaultColors = [
 	style.getPropertyValue("--background-color-a").trim(),
 ];
 
-// Parameters
-let parameters = window.location.search != "" ? window.location.search.substring(1).split("&") : null;
-
-if (parameters)
-	for (let i = 0; i < parameters.length; i++)
-		if (parameters[i].startsWith("post=")) {
-			showPostViewer(parameters[i].replace("post=", ""));
-			break;
-		}
+// URL queries (aka parameters)
+let queries = getURLParameters();
+if (queries && queries["post"] != undefined)
+	showPostViewer(queries["post"]);
 
 // OAuth
-const code = (parameters && parameters[0] == "state=connect") ? parameters[1].replace("code=", "") : null;
+const code = (queries && queries["code"] != undefined) ? queries["code"] = "" : null;
 
 //console.log(code);
 
@@ -206,7 +203,7 @@ async function renderPostMedia(post) {
 					<source src=\"${audioSource}" type="audio/mp4">
 				</audio>`;
 
-			media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop>
+			media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop playsinline>
 				<source src=\"${source}" type="video/mp4">
 				${audio}
 			</video>`;
@@ -386,36 +383,54 @@ function getClosestDefaultColor(color) {
 	return closestDefaultColor;
 }
 
+function getFormattedNumber(value) {
+	return value > 999999 ? Math.sign(value) * ((Math.abs(value) / 1000000).toFixed(1)) + "m" : value > 999 ? Math.sign(value) * ((Math.abs(value) / 1000).toFixed(1)) + "k" : value;
+}
+
 //#endregion
 
 //#region SET
 
+function getURLParameters() {
+	let parameters = window.location.search != "" ? {} : null;
+
+	if (parameters)
+		window.location.search.substring(1).split("&").forEach(query => 
+			parameters[query.split("=")[0]] = query.split("=")[1]
+		);
+
+	return parameters;
+}
+
 function setURLParameter(key, value) {
 	let url = location.protocol + '//' + location.host + location.pathname;
-	parameters = window.location.search != "" ? window.location.search.substring(1).split("&") : null;
+	queries = getURLParameters();
 
-	index = null;
-	let setURL = false;
-	if (parameters != null) {
-		for (let i = 0; i < parameters.length; i++)
-			if (parameters[i].startsWith(`${key}=`))
-				index = i;
-	} else if (value != null) {
+	if (!queries && value != null) {
+		// Add first query
 		url += `?${key}=${value}`;
-		setURL = true;
-	}
-
-	if (!setURL)
-		if (index == null && value != null) {
+	} else {
+		if (queries[key] == undefined && value != null) {
+			// Add query
 			url += window.location.search + `&${key}=${value}`;
-		} else if (index != null && value == null) {
-			parameters.splice(index, 1);
-			if (parameters.length > 0)
-				url += `?${parameters.length > 1 ? parameters.join("&") : parameters[0]}`;
-		} else if (index != null) {
-			parameters[index] = parameters[index].replace(new RegExp(`${key}=[A-z0-9]*`), `${key}=${value}`);
-			url += `?${parameters.length > 1 ? parameters.join("&") : parameters[0]}`;
+		} else if (queries[key] != undefined) {
+			if (value == null) {
+				// Remove query
+				delete queries[key];
+			} else {
+				// Change query
+				queries[key] = value;
+			}
+
+			if (Object.keys(queries).length > 0) {
+				// Add parameters to url
+				let parameters = [];
+				for (const [parameterKey, parameterValue] of Object.entries(queries))
+					parameters.push(`${parameterKey}=${parameterValue}`);
+				url += "?" + parameters.join("&");
+			}
 		}
+	}
 
 	window.history.pushState({ path: url }, "", url);
 }
@@ -426,25 +441,23 @@ function setURLParameter(key, value) {
 
 function setUpPage() {
 	// Set element properties
-	feedName.disabled = true;
-	hideSensitiveContentToggle.checked = localStorage.getItem("allowSensitiveContent") == "true" ? false : true;
-	allowSensitiveContent = !hideSensitiveContentToggle.checked;
+	if (feedName)
+		feedName.disabled = true;
+	allowSensitiveContent = localStorage.getItem("allowSensitiveContent") == "true" ? true : false;
+	if (hideSensitiveContentToggle)
+		hideSensitiveContentToggle.checked = !allowSensitiveContent;
 
-	// Set up feed
-	if (loadCurrentFeed()) {
-		setFilter(currentFilterIndex);
-	} else {
-		setFilter(1);
+	if (getCurrentDirectory()[0] == "") {
+		// Set up feed
+		if (loadCurrentFeed()) {
+			toggleFilter(currentFilterIndex);
+		} else {
+			toggleFilter(1);
+		}
+
+		updateSubredditList();
+		renderPosts();
 	}
-
-	updateSubredditList();
-	renderPosts();
-
-	// Set up input events
-	getSubreddit();
-	searchInput.addEventListener("input", function (event) {
-		getSubreddit(event.target.value);
-	});
 
 	window.addEventListener("keydown", function(event) {
 		if (event.code == "Enter" && feedName.classList.contains("active"))
@@ -452,24 +465,24 @@ function setUpPage() {
 	});
 
 	// Set up click events
-	document.addEventListener("mousedown", event => {
+	document.addEventListener("click", function(event) {
 		let element = event.target;
 
 		if (!header.contains(element) || element.id == "side-menu-toggle")
-			getSubreddit();
+			searchSubreddit();
 
-		if (!sideMenu.firstChild.nextSibling.contains(element) && element.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
+		if (sideMenu && !sideMenu.firstChild.nextSibling.contains(element) && element.id != "side-menu-toggle" && sideMenu.classList.contains("active"))
 			toggleSideMenu();
 
-		if (!subredditOptions.contains(element) && feedName.classList.contains("active"))
+		if (subredditOptions && !subredditOptions.contains(element) && feedName.classList.contains("active"))
 			hideFeedName();
 
-		if (!subredditOptions.contains(element) && !customFeedsList.contains(element) && customFeedsList.classList.contains("active"))
+		if (subredditOptions && !subredditOptions.contains(element) && !customFeedsList.contains(element) && customFeedsList.classList.contains("active"))
 			customFeedsList.classList.remove("active");
 
 		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (!element.classList.contains("blur") && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post") && !element.closest(".post").querySelector(".post-media-container .post-media-inner-container").contains(element)) {
+		} else if (!element.classList.contains("blur") && postsList && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post") && !element.closest(".post").querySelector(".post-media-container .post-media-inner-container")?.contains(element) && element.closest(".post.user, .post.subreddit") == null) {
 			showPostViewer(element.closest(".post").getAttribute("data-post-id"));
 		}
 
@@ -483,11 +496,41 @@ function setUpPage() {
 				element.classList.add("active");
 			}
 	});
+	
+	const headerLoadInterval = setInterval(function() {
+		if (document.querySelector("header")) {
+			clearInterval(headerLoadInterval);
 
-	// Set up search
-	document.querySelector("#search-bar").addEventListener("click", function (event) {
-		getSubreddit(searchInput.value);
-	});
+			searchInput = document.querySelector("#search-bar input");
+			searchResultList = document.querySelector("#search-bar #search-results");
+			header = document.querySelector("header");
+
+			// Set up input events
+			searchSubreddit();
+			searchInput.addEventListener("input", function (event) {
+				searchSubreddit(event.target.value);
+			});
+
+			// Set up search
+			searchInput.parentElement.addEventListener("click", function (event) {
+				searchSubreddit(searchInput.value);
+			});
+
+			searchInput.addEventListener("keydown", function(event) {
+				if (event.code == "Enter")
+					window.open(`search/?q=${searchInput.value}`, "_self");
+			});
+		}
+	}, 100);
+
+	if (getCurrentDirectory()[0] == "search") {
+		const searchLoadInterval = setInterval(function() {
+			if (searchScriptLoaded) {
+				clearInterval(searchLoadInterval);
+				setUpSearch();
+			}
+		}, 100);
+	}
 }
 
 setUpPage();
@@ -501,11 +544,13 @@ setUpPage();
  * @param {string} html - A post in html format
  */
 async function addPost(html) {
+	if (!html)
+		return;
+
 	const div = document.createElement("div");
 	div.innerHTML = html;
 
 	const post = postsList.appendChild(div.firstChild);
-
 	addVideoControls(post);
 }
 
@@ -522,9 +567,9 @@ async function renderPost(post, includeComments) {
 	const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
 	const id = post.id;
 
-	const upvotesCount = post.score > 999 ? Math.sign(post.score) * ((Math.abs(post.score) / 1000).toFixed(1)) + "k" : post.score;
-	const commentsCount = post.num_comments > 999 ? Math.sign(post.num_comments) * ((Math.abs(post.num_comments) / 1000).toFixed(1)) + "k" : post.num_comments;
-	const crosspostsCount = post.num_crossposts > 999 ? Math.sign(post.num_crossposts) * ((Math.abs(post.num_crossposts) / 1000).toFixed(1)) + "k" : post.num_crossposts;
+	const upvotesCount = getFormattedNumber(post.score);
+	const commentsCount = getFormattedNumber(post.num_comments);
+	const crosspostsCount = getFormattedNumber(post.num_crossposts);
 
 	const comments = includeComments ? "<p id=\"loading-comments\">Loading comments...</p>" : "";
 
@@ -562,7 +607,11 @@ async function renderPost(post, includeComments) {
 		postFeedId = `data-feed-id="${feedId}"`;
 
 	return `<div ${postFeedId} data-post-id="${id}" class="post box">
-				<p class="post-header">${await getSubredditIcon(post.subreddit)}${subRedditName} &middot; Posted by u/${author} ${getTimePassedSinceDate(post.created)} ago ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</p>
+				<span class="post-header">
+					${await getSubredditIcon(post.subreddit)}
+					<p>${subRedditName} &middot; Posted by u/${author} ${getTimePassedSinceDate(post.created)} ago</p>
+					${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}
+				</span>
 				<p class="post-title">${title}</p>
 				${description}
 				${await renderPostMedia(post)}
@@ -576,6 +625,60 @@ async function renderPost(post, includeComments) {
 			</div>`;
 }
 
+function renderUser(user) {
+	if (user.is_suspended)
+		return;
+
+	const name = user.name;
+	const karma = getFormattedNumber(user.link_karma + user.comment_karma);
+	const avatar = user.icon_img;
+	const id = user.id;
+	const description = (user.subreddit && user.subreddit.public_description) ? `<p class="post-description">${user.subreddit.public_description}</p>` : "";
+
+	// Tags
+	let tags = [];
+
+	if (user.subreddit && user.subreddit.over_18)
+		tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
+
+	return `<div data-feed-id="${feedId}" data-user-id="${id}" class="post user box">
+				<img class="avatar" src="${avatar}">
+				<span>
+					<p class="post-title">u/${name}</p>
+					<p class="post-subtitle">${karma} karma</p>
+					${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}
+					${description}
+				</span>
+			</div>`
+}
+
+function renderSubreddit(subreddit) {
+	const name = subreddit.display_name;
+	const members = getFormattedNumber(subreddit.subscribers);
+	const icon = subreddit.community_icon ? subreddit.community_icon : "media/logo.png";
+	const banner = subreddit.banner_background_image ? `<img class="subreddit-banner" src="${subreddit.banner_background_image}">` : "";
+	const id = subreddit.id;
+	const description = subreddit.public_description_html ? subreddit.public_description_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
+
+	// Tags
+	let tags = [];
+
+	if (subreddit.over18)
+		tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
+
+	return `<div data-feed-id="${feedId}" data-user-id="${id}" class="post subreddit box">
+				${banner}
+				<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${name}')"></button>
+				<span>
+					<img class="subreddit-icon" src="${icon}">
+					<p class="post-title">r/${name}</p>
+					<p class="post-subtitle">${members} members</p>
+					${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}
+					${description}
+				</span>
+			</div>`
+}
+
 /**
  * Render posts of the curren feed and update the list of posts
  * TO DO: save rendered posts to avoid duplicate post in post list
@@ -587,7 +690,7 @@ function renderPosts(forceOverwrite) {
 		currentFeed.subreddits = currentSubreddits.slice();
 		currentFeed.filterIndex = currentFilterIndex;
 
-		lastPost = null;
+		lastPostId = null;
 
 		// Remove old posts
 		if (postsList.children.length > 1) {
@@ -607,11 +710,10 @@ function renderPosts(forceOverwrite) {
 	if (!currentSubreddits.length) {
 		if (document.querySelector(".empty-feed-warning") == null)
 			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
-
 		return;
 	}
 
-	const url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json?limit=${maxPosts}${lastPost ? "&after=" + lastPost : ""}`;
+	const url = `https://www.reddit.com/r/${currentSubreddits.length > 1 ? currentSubreddits.join("+") : currentSubreddits[0]}/${filters[currentFilterIndex]}.json?limit=${maxPosts}${lastPostId ? "&after=" + lastPostId : ""}`;
 
 	fetch(url).then(function(result) {
 			return result.json();
@@ -624,8 +726,6 @@ function renderPosts(forceOverwrite) {
 			let skipped = 0;
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
-
-				// console.log(post);
 
 				// Skip duplicate and sensitive posts
 				const duplicatePost = document.querySelector(`[data-post-id="${post.id}"]`);
@@ -641,7 +741,7 @@ function renderPosts(forceOverwrite) {
 				addPost(await renderPost(post, false));
 
 				postCount++;
-				lastPost = "t3_" + post.id;
+				lastPostId = "t3_" + post.id;
 			}
 
 			loadingNewPosts = false;
@@ -727,6 +827,10 @@ function hidePostViewer() {
 
 //#region VIDEO CONTROLS
 
+/**
+ * Class for video controls
+ * (Does not fully support mobile yet)
+ */
 class videoControls {
 	constructor(video) {
 		const that = this;
@@ -751,8 +855,9 @@ class videoControls {
 		this.video.parentElement.appendChild(controlsDiv.firstChild);
 
 		this.audio = this.video.querySelector("audio");
-		this.audioSlider = this.video.parentElement.querySelector(".secondary-video-controls #volume .slider");
-		this.videoProgress = this.video.parentElement.querySelector(".secondary-video-controls #progress");
+		this.videoControls = this.video.parentElement.querySelector("#video-controls");
+		this.audioSlider = this.videoControls.querySelector(".secondary-video-controls #volume .slider");
+		this.videoProgress = this.videoControls.querySelector(".secondary-video-controls #progress");
 
 		if (!this.audio) {
 			this.video.parentElement.classList.add("muted");
@@ -766,72 +871,48 @@ class videoControls {
 		this.started = false;
 		this.playing = false;
 		this.manuallyPaused = false;
-		this.visible = this.isVisible(this.video);
+		this.visible = isVisible(this.video);
 
 		this.draggingVideoProgress = false;
 		this.draggingAudioSlider = false;
 
 		this.hoveringAudioSlider = false;
+		this.hoveringVideo = false;
 
 		this.video.addEventListener("contextmenu", function(event) {
 			event.preventDefault();
 			event.stopPropagation();
 		});
 
-		this.video.parentElement.querySelector(".primary-video-controls").addEventListener("click", function(event) {
-			that.startVideo(event);
-		});
+		this.video.parentElement.addEventListener("mouseenter", function(event) { that.toggleControls(event); });
+		this.video.parentElement.addEventListener("mouseleave", function(event) { that.toggleControls(event); });
 
-		this.video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) {
-			that.togglePause();
-		});
+		this.video.parentElement.querySelector(".primary-video-controls").addEventListener("click", function(event) { that.startVideo(event); });
+		this.video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) { that.togglePause(); });
+		this.video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) { that.toggleVolume(event); });
 
-		this.video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) {
-			that.toggleVolume(event);
-		});
+		this.videoProgress.addEventListener("mousedown", function(event) { that.updateVideoProgress(event); });
+		this.videoProgress.addEventListener("touchstart", function(event) { that.updateVideoProgress(event); });
 
-		this.videoProgress.addEventListener("mousedown", function(event) {
-			that.updateVideoProgress(event);
-		});
-
-		this.videoProgress.addEventListener("touchstart", function(event) {
-			that.updateVideoProgress(event);
-		});
-
-		document.addEventListener("mousemove", function(event) {
-			that.onMouseMove(event);
-		});
-
-		document.addEventListener("mouseup", function(event) {
-			that.onMouseUp(event);
-		});
-
-		document.addEventListener("scroll", function(event) {
-			that.onScroll(event);
-		});
+		document.addEventListener("mousemove", function(event) { that.onMouseMove(event); });
+		document.addEventListener("mouseup", function(event) { that.onMouseUp(event); });
+		document.addEventListener("scroll", function(event) { that.onScroll(event); });
 
 		if (this.audio) {
-			this.audioSlider.parentElement.addEventListener("mouseenter", function(event) {
-				that.updateAudioSlider(event);
-			});
-	
-			this.audioSlider.parentElement.addEventListener("mouseleave", function(event) {
-				that.updateAudioSlider(event);
-			});
-
-			this.audioSlider.addEventListener("mousedown", function(event) {
-				that.updateAudioSlider(event);
-			});
+			this.audioSlider.parentElement.addEventListener("mouseenter", function(event) { that.updateAudioSlider(event); });
+			this.audioSlider.parentElement.addEventListener("mouseleave", function(event) { that.updateAudioSlider(event); });
+			this.audioSlider.addEventListener("mousedown", function(event) { that.updateAudioSlider(event); });
 		}
 
 		const height = this.video.offsetWidth;
-		this.video.parentElement.style.width = height + "px";
+		// this.video.parentElement.style.width = height + "px";
 	}
 
 	startVideo(event) {
 		event.target.closest(".video-controls").classList.add("active");
 
 		this.progressUpdateInterval = null;
+		this.videoControlsHoverExitTimeout = null;
 		this.started = true;
 
 		const that = this;
@@ -981,6 +1062,8 @@ class videoControls {
 
 		this.updateVideoProgress(event);
 		this.updateAudioSlider(event);
+
+		this.toggleControls(event);
 	}
 
 	onMouseUp(event) {
@@ -992,7 +1075,7 @@ class videoControls {
 	}
 
 	onScroll(event) {
-		this.visible = this.isVisible(this.video);
+		this.visible = isVisible(this.video);
 
 		if (this.started) {
 			if (this.visible && !this.playing && !this.manuallyPaused) {
@@ -1005,13 +1088,27 @@ class videoControls {
 		}
 	}
 
-	isVisible(element) {
-		const top = element.getBoundingClientRect().top;
-		const bottom = element.getBoundingClientRect().bottom;
-		if (window.innerHeight > top && bottom > 0) {
-			return true;
-		} else {
-			return false;
+	/**
+	 * Controls should only disappear if the mouse has left the video element hasn't dragged the audio or video slider for at least 350ms
+	 * @param {*} event 
+	 */
+	toggleControls(event) {
+		if (event.type == "mouseenter") {
+			this.hoveringVideo = true;
+			this.videoControls.classList.add("hover");
+		} else if (event.type == "mouseleave") {
+			this.hoveringVideo = false;
+		} else if (event.type == "mousemove") {
+			if (!this.hoveringVideo) {
+				if (this.videoControlsHoverExitTimeout == null) 
+					this.videoControlsHoverExitTimeout = setTimeout(() => {
+						if (!this.hoveringVideo && !this.draggingVideoProgress && !this.draggingAudioSlider)
+							this.videoControls.classList.remove("hover");
+					}, 350);
+			} else if (this.videoControlsHoverExitTimeout != null) {
+				clearTimeout(this.videoControlsHoverExitTimeout);
+				this.videoControlsHoverExitTimeout = null;
+			}
 		}
 	}
 }
@@ -1029,9 +1126,47 @@ function addVideoControls(post) {
 //#region FEED
 
 /**
+ * Updates the list of posts
+ */
+function updateFeed() {
+	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex) {
+		if (getCurrentDirectory()[0] == "") {
+			renderPosts();
+		} else if (getCurrentDirectory()[0] == "search") {
+			renderSearchResults();
+		}
+	}
+}
+
+/**
+ * Saves the current feed to local storage
+ */
+function saveCurrentFeed() {
+	localStorage.setItem("currentFeed", JSON.stringify(currentFeed));
+}
+
+/**
+ * Loads the current feed from local storage
+ * @returns {boolean} False if there was no saved feed
+ */
+function loadCurrentFeed() {
+	const feed = JSON.parse(localStorage.getItem("currentFeed"));
+
+	if (feed != null) {
+		currentFeed = feed;
+		currentSubreddits = currentFeed.subreddits.slice();
+		currentFilterIndex = currentFeed.filterIndex;
+
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/**
  * Updates list that displayes the subreddits of the current feed
  */
- async function updateSubredditList() {
+async function updateSubredditList() {
 	let oldSubreddits = [];
 	Array.from(subredditList.children).forEach(child => {
 		oldSubreddits.push(child.textContent.trim().replace("r/", ""));
@@ -1053,39 +1188,6 @@ function addVideoControls(post) {
 		subredditList.textContent = null;
 
 	updateSubredditButtons();
-}
-
-/**
- * Updates the list of posts
- */
-function updateFeed() {
-	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex)
-		renderPosts();
-}
-
-/**
- * Saves the current feed to local storage
- */
- function saveCurrentFeed() {
-	localStorage.setItem("currentFeed", JSON.stringify(currentFeed));
-}
-
-/**
- * Loads the current feed from local storage
- * @returns {boolean} False if there was no saved feed
- */
-function loadCurrentFeed() {
-	const feed = JSON.parse(localStorage.getItem("currentFeed"));
-
-	if (feed != null) {
-		currentFeed = feed;
-		currentSubreddits = currentFeed.subreddits.slice();
-		currentFilterIndex = currentFeed.filterIndex;
-
-		return true;
-	} else {
-		return false;
-	}
 }
 
 /**
@@ -1117,25 +1219,6 @@ function showCustomFeedList() {
 }
 
 /**
- * Changes the current filter and updates the list of posts
- * @param {number} index - Index of the new filter
- */
- function setFilter(index) {
-	// Should return if the user presses the current filter button
-
-	for (let i = 0; i < filterList.children.length; i++) {
-		if (i == index) {
-			filterList.children[i].classList.add("active");
-		} else if (filterList.children[i].classList.contains("active")) {
-			filterList.children[i].classList.remove("active");
-		}
-	}
-
-	currentFilterIndex = index;
-	updateFeed();
-}
-
-/**
  * Add/remove a subreddit from the current feed
  * @param {string} subreddit - Name of the new subreddit
  */
@@ -1151,9 +1234,33 @@ function toggleSubreddit(subreddit) {
 }
 
 /**
+ * Changes the current filter and updates the list of posts
+ * @param {number} index - Index of the new filter
+ * @param {boolean} - If set to true, it's possibel to select no filter
+ */
+function toggleFilter(index, allowNone) {
+	// Should return if the user presses the current filter button
+
+	let none = true;
+	for (let i = 0; i < filterList.children.length; i++) {
+		if ((i == index && !filterList.children[i].classList.contains("active")) || (!allowNone && filterList.children[i].classList.contains("active"))) {
+			filterList.children[i].classList.add("active");
+			none = false;
+		} else if (filterList.children[i].classList.contains("active")) {
+			filterList.children[i].classList.remove("active");
+		}
+	}
+
+	currentFilterIndex = !none ? index : null;
+	if (getCurrentDirectory()[0] == "search")
+		localStorage.setItem("searchFilter", currentFilterIndex);
+	updateFeed();
+}
+
+/**
  * Saves a custom feed
  */
- function saveFeed() {
+function saveFeed() {
 	const customFeeds = localStorage.getItem("customFeeds") ? JSON.parse(localStorage.getItem("customFeeds")) : {};
 	customFeeds[feedName.value] = currentFeed;
 
@@ -1175,7 +1282,7 @@ function loadFeed(name) {
 	currentFilterIndex = customFeeds[name].filterIndex;
 
 	// Update the list of posts and the list filters
-	setFilter(currentFilterIndex);
+	toggleFilter(currentFilterIndex);
 	updateSubredditList();
 }
 
@@ -1184,13 +1291,21 @@ function loadFeed(name) {
 //#region SCROLLING
 
 document.addEventListener("scroll", function(event) {
-	const lastPostTop = document.querySelector("#posts-list .post:last-child").getBoundingClientRect().top;
-	const screenBottom = window.innerHeight;
+	const lastPost = getCurrentDirectory()[0] != "search" ? document.querySelector("#posts-list .post:last-child") : document.querySelector("#results-list .post:last-child");
+	if (lastPost) {
+		const lastPostTop = lastPost.getBoundingClientRect().top;
+		const screenBottom = window.innerHeight;
 
-	// Check if the last post is visible
-	if (screenBottom > lastPostTop && !loadingNewPosts) {
-		renderPosts();
-		loadingNewPosts = true;
+		// Check if the last post is visible
+		if (screenBottom > lastPostTop && !loadingNewPosts) {
+			if ( getCurrentDirectory()[0] != "search") {
+				renderPosts();
+			} else {
+				renderSearchResults();
+			}
+			
+			loadingNewPosts = true;
+		}
 	}
 
 	if (window.scrollY > 500) {
@@ -1207,6 +1322,22 @@ function scrollToTop() {
 	});
 }
 
+/**
+ * Checks if an element is currently visible by comparing the top and bottom of the rect to the top and bottom of the window
+ * @param {*} element
+ * @returns True if the element is visible
+ */
+function isVisible(element) {
+	const top = element.getBoundingClientRect().top;
+	const bottom = element.getBoundingClientRect().bottom;
+
+	if (window.innerHeight > top && bottom > 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 //#endregion
 
 //#region SEARCHING
@@ -1215,24 +1346,37 @@ function scrollToTop() {
  * Search for a subreddit name and update search results
  * @param {string} name - Name of the subreddit to search for
  */
- async function getSubreddit(name) {
-	const searchUrl = `https://www.reddit.com/subreddits/search.json?q=${name}`;
+ async function searchSubreddit(name) {
+	let searchButton = searchResultList.querySelector("#search-button");
+	const searchText = `<span><i class="fas fa-search" aria-hidden="true"></i>Search for "${name}"</span><i class="button fa-solid fa-angle-right"></i>`;
+	const searchUrl = `search/?q=${name}`;
 
 	if (!name) {
 		searchResultList.innerHTML = "";
 		searchResultList.style.display = "none";
 	} else {
-		await fetch(searchUrl).then(function(result) {
+		if (searchButton) {
+			searchButton.innerHTML = searchText;
+			searchButton.href = searchUrl;
+		} else if (name) {
+			searchResultList.innerHTML += `<a id="search-button" href="${searchUrl}">${searchText}</a>`;
+			searchButton = searchResultList.querySelector("#search-button");
+		}
+
+		await fetch(`https://www.reddit.com/subreddits/search.json?q=${name}${allowSensitiveContent ? "&include_over_18=1" : ""}&sort=relevance`).then(function(result) {
 			return result.json();
 		}).then(function(result) {			
 			if (searchInput.value != name)
 				return searchResultList.style.display = "none";
 
-			const searchResults = result.data.children.slice(0, 15);
+			const searchResults = result.data.children.slice(0, 10);
+
+			const div = document.createElement("div");
+			div.appendChild(searchButton);
 
 			searchResultList.innerHTML = searchResults.map(element => 
 				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
-			).join("");
+			).join("") + div.innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 		});
 
 		searchResultList.style.display = null;

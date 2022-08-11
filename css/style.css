@@ -17,7 +17,8 @@
 	--font-family: "noto sans", Sans-serif;
 	--page-width: 640px;
 
-	--box-shadow: 0 0 20px 5px var(--background-color-a);
+	--box-shadow-a: 0 0 20px 5px var(--background-color-a);
+	--box-shadow-b: 0 0 20px 5px var(--background-color-b);
 	--drop-shadow: 0 0 20px var(--background-color-a);
 
 	--border-radius-a: 16px;
@@ -119,6 +120,7 @@ span {
 .button:hover {
 	color: var(--text-color-a);
 	background-color: var(--purple-a);
+	text-decoration: none;
 }
 
 .button-group {
@@ -155,11 +157,12 @@ input, button, a, .slider, .filter {
 
 a {
 	color: var(--purple-a);
+	text-decoration: none;
 	transition: color 200ms ease-in-out;
 }
 
 a:hover {
-	color: var(--purple-b);
+	text-decoration: underline;
 }
 
 .hidden {
@@ -309,7 +312,7 @@ header {
 	top: 0;
 	box-sizing: border-box;
 	background-color: var(--background-color-c);
-	box-shadow: var(--box-shadow);
+	box-shadow: var(--box-shadow-a);
 	z-index: 9;
 }
 
@@ -363,6 +366,10 @@ header #search-bar {
 }
 
 #search-results {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 1rem;
 	position: fixed;
 	top: 50px;
 	width: calc(var(--page-width) - 40px);
@@ -376,11 +383,41 @@ header #search-bar {
 	padding: 0;
 }
 
-.search-result {
-	width: 100%;
+#search-results :last-child {
+	margin-bottom: 0;
 }
 
-.subreddit-toggle-button, .feed-load-button {
+#search-results #search-button {
+	display: flex;
+	justify-content: space-between;
+	font-size: 1rem;
+	width: 100%;
+	text-decoration: none;
+	color: var(--text-color-a);
+	cursor: pointer;
+}
+
+#search-results #search-button span {
+	margin-left: -5px;
+	gap: 5px;
+}
+
+#search-results #search-button i {
+	display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#search-results #search-button:hover > i {
+	background-color: var(--purple-a);
+}
+
+.search-result {
+	width: 100%;
+	margin: 0;
+}
+
+.subreddit-toggle-button, .feed-load-button, #search-results #search-button i {
 	float: right;
 	width: 1.5rem;
 	height: 1.5rem;
@@ -445,7 +482,7 @@ header #search-bar {
 
 /* #region SIDE MENU */
 
-#posts-list, #side-menu > div {
+#posts-list, #side-menu > div, #results-list {
 	display: flex;
 	flex-direction: column;
 	gap: 30px;
@@ -548,50 +585,52 @@ header #search-bar {
 
 /* #region POSTS */
 
-#posts-list {
+#posts-list, #results-list {
 	max-width: var(--page-width);
 	flex: 0 0 var(--page-width);
 }
 
 .post {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
 }
 
 .post-header, .post-footer {
+	gap: 7.5px;
 	color: var(--text-color-c);
 	font-size: 0.85rem;
+	margin: 0 !important;
 }
 
 .post-subreddit-icon, .subreddit-icon {
 	border-radius: var(--border-radius-b);
 	height: 1.25rem;
-	margin-right: 7.5px;
 	vertical-align: middle;
 }
 
-#posts-list .post {
+#posts-list .post, #results-list .post {
 	cursor: pointer;
 }
 
-#posts-list .post .post-description {
+#posts-list .post .post-description, #results-list .post .post-description {
 	max-height: 135px;
 	overflow: hidden;
 	mask-image: linear-gradient(180deg, var(--background-color-a) 60%, transparent);
 	-webkit-mask-image: linear-gradient(180deg, var(--background-color-a) 60%, transparent);
 }
 
-#posts-list .post .post-media-container .post-media.blur {
+#posts-list .post .post-media-container .post-media.blur, #results-list .post .post-media-container .post-media.blur {
 	filter: blur(75px);
-	transition: 200ms ease-in-out;
+	transition: 400ms ease-in-out;
 }
 
-#posts-list .post .post-media-container .post-media.blur.active {
+#posts-list .post .post-media-container .post-media.blur.active, #results-list .post .post-media-container .post-media.blur.active {
 	filter: blur(0px);
 }
 
-.post-description, .description, .comment-header, #options-list span p {
+.post-description, .description, .post-subtitle, .comment-header, #options-list span p {
 	color: var(--text-color-b);
 	font-size: 0.85rem;
 	word-break: break-word;
@@ -600,6 +639,7 @@ header #search-bar {
 .post-media-container {
 	display: flex;
     justify-content: center;
+	align-items: center;
 	border-radius: var(--border-radius-a);
 	width: 100%;
 	height: auto;
@@ -608,7 +648,13 @@ header #search-bar {
 
 .post-media-inner-container {
 	position: relative;
+	display: flex;
+	justify-content: center;
+	width: fit-content;
+	height: 100%;
 	border-radius: inherit;
+	box-shadow: var(--box-shadow-a);
+	overflow: hidden;
 }
 
 .post-media {
@@ -616,7 +662,6 @@ header #search-bar {
 	height: 100%;
 	object-fit: contain;
 	border-radius: inherit;
-	box-shadow: var(--box-shadow);
 	overflow: hidden;
 }
 
@@ -643,7 +688,7 @@ header #search-bar {
 }
 
 .tags {
-	float: right;
+	margin-left: auto;
 }
 
 .tags i {
@@ -691,7 +736,7 @@ header #search-bar {
 	pointer-events: none;
 }
 
-.video-controls.active:hover:after {
+.video-controls.active.hover::after {
 	opacity: 1;
 }
 
@@ -721,7 +766,7 @@ header #search-bar {
 	transition: opacity 200ms ease-in-out;
 }
 
-.secondary-video-controls:hover {
+.video-controls.active.hover .secondary-video-controls {
 	opacity: 1;
 }
 
@@ -846,7 +891,7 @@ header #search-bar {
 #post-viewer .post {
 	width: var(--page-width);
 	margin: 65px auto 20px auto;
-	box-shadow: var(--box-shadow);
+	box-shadow: var(--box-shadow-a);
 	box-sizing: border-box;
 }
 
@@ -901,7 +946,7 @@ header #search-bar {
 	font-size: 1.25rem;
 	background-color: var(--background-color-c);
 	border-radius: var(--border-radius-b);
-	box-shadow: var(--box-shadow);
+	box-shadow: var(--box-shadow-a);
     transform: translateY(75px);
 }
 
@@ -978,10 +1023,10 @@ header #search-bar {
 	}
 
 	#side-menu > div > div {
-		box-shadow: var(--box-shadow);
+		box-shadow: var(--box-shadow-a);
 	}
 	
-	#posts-list {
+	#posts-list, #results-list {
 		flex: none;
 		max-width: none;
 		width: 100%;
