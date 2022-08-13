@@ -150,7 +150,7 @@ async function authorize(token) {
  * Calculate the time passed since a unix date
  * @param {number} unixDate - Date in unix format
  */
- function getTimePassedSinceDate(unixDate) {
+function getTimePassedSinceDate(unixDate) {
 	const date = Math.abs((new Date(unixDate * 1000).getTime() / 1000).toFixed(0));
 	const currentDate = Math.abs((new Date().getTime() / 1000).toFixed(0));
 
@@ -178,6 +178,10 @@ async function authorize(token) {
 	return time;
 }
 
+function renderHTML(string) {
+	return string.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "");
+}
+
 /**
  * Turn post media into html
  * @param {Object} post - The post with the media that needs to be rendered
@@ -192,32 +196,46 @@ async function renderPostMedia(post) {
 		classes.push("blur");
 
 	let media;
-	if (post.media) {
-		if (post.media.reddit_video) {
-			const source = post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16);
+	if (post.media || (post.preview && post.preview.reddit_video_preview)) {
+		let source;
+		let isPreview = false;
 
-			// Fetch audio
-			const audioSource = source.replace(new RegExp("DASH_[0-9]+.mp4"), "DASH_audio.mp4");
-			const audioResponse = await fetch(audioSource);
-			let audio = "";
+		if (post.media && post.media.reddit_video) {
+			source = post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)
+		} else if (post.preview) {
+			source = post.preview.reddit_video_preview.fallback_url;
+			isPreview = true;
+		}
 
-			if (audioResponse.status == 200)
-				audio = `<audio preload="auto" controls loop>
-					<source src=\"${audioSource}" type="audio/mp4">
-				</audio>`;
+		if (source) {
+			if (!isPreview) {
+				// Fetch audio
+				const audioSource = source.replace(new RegExp("DASH_[0-9]+.mp4"), "DASH_audio.mp4");
+				const audioResponse = await fetch(audioSource);
+				let audio = "";
 
-			media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop playsinline>
-				<source src=\"${source}" type="video/mp4">
-				${audio}
-			</video>`;
+				if (audioResponse.status == 200)
+					audio = `<audio preload="auto" controls loop>
+						<source src=\"${audioSource}" type="audio/mp4">
+					</audio>`;
+
+				media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop playsinline>
+					<source src=\"${source}" type="video/mp4">
+					${audio}
+				</video>`;
+			} else {
+				media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop playsinline>
+					<source src=\"${source}" type="video/mp4">
+				</video>`;
+			}
 		} else if (post.media.oembed) {
 			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
 		}
 	} else if (post.preview) {
 		if (post.preview.images[0].variants.gif) {
-			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.preview.images[0].variants.gif.source.url.replace("&amp;", "&")}" loading="lazy">`;
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${renderHTML(post.preview.images[0].variants.gif.source.url)}" loading="lazy">`;
 		} else {
-			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.preview.images[0].source.url.replace("&amp;", "&")}" loading="lazy">`;
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${renderHTML(post.preview.images[0].source.url)}" loading="lazy">`;
 		}
 	}
 
@@ -241,7 +259,7 @@ async function renderComment(comment) {
 	
 	let thread = `<span class="comment" style="margin-left: ${comment.data.depth * 25}px;">
 		<p class="comment-header"><img src="${icon}" loading="lazy"> ${comment.data.author} &middot; ${getTimePassedSinceDate(comment.data.created)} ago</p>
-		${comment.data.body_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"comment-body\">")}
+		${renderHTML(comment.data.body_html).replace("<div class=\"md\">", "<div class=\"comment-body\">")}
 	</span>`;
 
 	// ${"<i class=\"comment-line\"></i>".repeat(comment.data.depth + 1)}
@@ -570,7 +588,7 @@ async function renderPost(post, includeComments) {
 	const subRedditName = post.subreddit_name_prefixed;
 	const author = post.author;
 	const title = post.title;
-	const description = post.selftext_html ? post.selftext_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
+	const description = post.selftext_html ? renderHTML(post.selftext_html).replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
 	const id = post.id;
 
 	const upvotesCount = getFormattedNumber(post.score);
@@ -664,7 +682,7 @@ function renderSubreddit(subreddit) {
 	const icon = subreddit.community_icon ? subreddit.community_icon : fallbackSubredditIcon;
 	const banner = subreddit.banner_background_image ? `<img class="subreddit-banner" src="${subreddit.banner_background_image}">` : "";
 	const id = subreddit.id;
-	const description = subreddit.public_description_html ? subreddit.public_description_html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(new RegExp("<!-- [A-z]* -->"), "").replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
+	const description = subreddit.public_description_html ? renderHTML(subreddit.public_description_html).replace("<div class=\"md\">", "<div class=\"post-description\">") : "";
 
 	// Tags
 	let tags = [];
@@ -745,6 +763,8 @@ function renderPosts(forceOverwrite) {
 					break;
 
 				addPost(await renderPost(post, false));
+
+				console.log(post);
 
 				postCount++;
 				lastPostId = "t3_" + post.id;
@@ -1389,7 +1409,7 @@ function isVisible(element) {
 
 			searchResultList.innerHTML = searchResults.map(element => 
 				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
-			).join("") + div.innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+			).join("") + renderHTML(div.innerHTML);
 		});
 
 		searchResultList.style.display = null;
