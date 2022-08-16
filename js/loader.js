@@ -40,6 +40,8 @@ function getCurrentDirectory() {
 	if (localHosting)
 		path.shift();
 
+	console.log(path, path.length);
+
 	return path;
 }
 
