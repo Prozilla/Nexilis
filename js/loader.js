@@ -35,7 +35,7 @@ function loadHtml(directory, parentElement, before) {
 }
 
 function getCurrentDirectory() {
-	const path = window.location.pathname
+	let path = window.location.pathname
 	console.log(path);
 	path = path.replace(/\//g, " ")
 	console.log(path);
