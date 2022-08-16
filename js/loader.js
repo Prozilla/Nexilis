@@ -35,12 +35,11 @@ function loadHtml(directory, parentElement, before) {
 }
 
 function getCurrentDirectory() {
-	let path = window.location.pathname
-	console.log(path);
-	path = path.replace(/\//g, " ")
-	console.log(path);
-	path = path.trim();
-	console.log(path);
+	let path = window.location.pathname.replace(/\//g, " ").trim();
+
+	if (path.length == 0)
+		return [];
+
 	path = path.split(" ");
 
 	if (localHosting)
