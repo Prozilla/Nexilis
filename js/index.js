@@ -790,7 +790,7 @@ function renderPosts(forceOverwrite) {
 
 				addPost(await renderPost(post, false), feedId);
 
-				// console.log(post);
+				console.log(post);
 
 				postCount++;
 				lastPostId = "t3_" + post.id;
