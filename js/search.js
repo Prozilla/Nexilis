@@ -17,7 +17,7 @@ function setUpSearch() {
 	postsList = document.querySelector("#results-list");
 
 	if (!searchQuery) {
-		addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+		addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>", currentFeedId);
 	} else {
 		searchInput.value = searchQuery;
 	}
@@ -41,12 +41,12 @@ async function renderSearchResults(forceOverwrite) {
 			});
 		}
 
-		feedId++;
+		currentFeedId++;
 	}
 
 	if (!searchQuery) {
 		if (!document.querySelector(".empty-feed-warning"))
-			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>", currentFeedId);
 		return;
 	}
 
@@ -61,7 +61,7 @@ async function renderSearchResults(forceOverwrite) {
 		const results = result.data ? [result] : result;
 
 		if (!results.length)
-			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>", currentFeedId);
 
 		let previousPostCount = postCount;
 
@@ -71,6 +71,7 @@ async function renderSearchResults(forceOverwrite) {
 			let skipped = 0;
 			for (let i = 0; i < searchResults.length; i++) {
 				const searchResult = searchResults[i].data;
+				const feedId = currentFeedId;
 
 				// console.log(searchResult);
 	
@@ -82,7 +83,7 @@ async function renderSearchResults(forceOverwrite) {
 				}
 	
 				// Stop loading new posts if there's a new feed
-				if (postsList.children[i - skipped] == null || (postsList.children[i - skipped].id != "filter-list" && postsList.children[i - skipped].getAttribute("data-feed-id") != feedId))
+				if (postsList.children[i - skipped] == null || (postsList.children[i - skipped].id != "filter-list" && postsList.children[i - skipped].getAttribute("data-feed-id") != currentFeedId))
 					break;
 
 				let post; 
@@ -94,7 +95,7 @@ async function renderSearchResults(forceOverwrite) {
 					post = renderSubreddit(searchResult);
 				}
 	
-				addPost(post);
+				addPost(post, feedId);
 	
 				postCount++;
 				lastPostId = searchResults[i].kind + "_" + searchResult.id;

@@ -1,49 +1,70 @@
-const head = document.querySelector("head");
-const div = document.createElement("div");
-
 // True if the website is hosted locally
-let localHosting = false;
+let localHosting = window.location.pathname.startsWith("/spreddit/");
 
-let base = "/";
-if (window.location.pathname.startsWith("/spreddit/"))
-{
-	localHosting = true;
-	base = "/spreddit/";
-}
+// Add base url
+const baseElement = document.createElement("div");
+baseElement.innerHTML = `<base href="${localHosting ? "/spreddit/" : "/"}">`;
+document.head.appendChild(baseElement.firstChild);
 
-div.innerHTML = `<base href="${base}">`;
-head.appendChild(div.firstChild);
+// Dynamic html
+function loadHtml(directory, parentElement, before) {
+	return new Promise((resolve, reject) => {
+		if (localHosting)
+			directory = "/spreddit/" + directory;
 
-const headUrl = localHosting ? "/spreddit/head.html" : "/head.html";
+		if (parentElement == null)
+			return;
 
-// Insert header
-fetch(headUrl)
-	.then(data => data.text())
-	.then(html => head.innerHTML += html);
+		fetch(directory)
+			.then(data => data.text())
+			.then((html) => {
+				const tempParent = document.createElement("div");
+				tempParent.innerHTML = html;
 
-const headerUrl = window.location.pathname.startsWith("/spreddit/") ? "/spreddit/header.html" : "/header.html";
-
-fetch(headerUrl)
-	.then(data => data.text())
-	.then(function(html) {
-		div.innerHTML = html;
-		for (let i = 0; i < div.children.length; i++)
-			document.body.prepend(div.children[div.children.length - 1 - i]);
+				// Add all elements from HTML file to parentElement
+				for (let i = 0; i < tempParent.children.length; i++) {
+					if (before) {
+						parentElement.prepend(tempParent.children[i]);
+					} else {
+						parentElement.append(tempParent.children[i]);
+					}
+				}
+			})
+			.then(resolve("SUCCESS"));
 	});
-
-if (getCurrentDirectory()[0] == "search") {
-	const sources = [
-		`${localHosting ? "/spreddit/" : ""}js/search.js`,
-		`${localHosting ? "/spreddit/" : ""}js/index.js`,
-	];
-
-	for (let i = 0; i < sources.length; i++) {
-		const script = document.createElement("script");
-		script.src = sources[i];
-		document.head.appendChild(script);
-	}
 }
 
 function getCurrentDirectory() {
-	return (localHosting ? window.location.pathname.substring(9) : window.location.pathname).replace(/\//g, " ").trim().split("/");
+	const path = window.location.pathname.replace(/\//g, " ").trim().split(" ")
+
+	if (localHosting)
+		path.shift();
+
+	return path;
+}
+
+// Load files
+loadHtml("head.html", document.head, false);
+
+// Load scripts
+function loadJs(directory, isModule, parentElement) {
+	return new Promise((resolve, reject) => {
+		const script = document.createElement("script");
+		script.src = directory;
+
+		if (isModule)
+			script.type = "module";
+
+		parentElement.appendChild(script);
+
+		script.addEventListener("load", () => {
+			resolve("SUCCESS");
+		});
+	});
+}
+
+loadJs("js/index.js", false, document.head);
+
+if (getCurrentDirectory()[0] == "search") {
+	loadJs("js/search.js", false, document.head);
 }

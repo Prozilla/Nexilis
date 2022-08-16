@@ -59,6 +59,8 @@ body {
 	font-family: var(--body-font);
 }
 
+/* #region TEXT */
+
 p, li, input, a {
 	font-size: 1rem;
 	font-weight: normal;
@@ -111,8 +113,29 @@ span {
 	margin-top: 1rem;
 }
 
+a {
+	color: var(--purple-a);
+	text-decoration: none;
+	transition: color 200ms ease-in-out;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+.hidden {
+	display: none;
+}
+
+/* #endregion */
+
+/* #region BUTTONS */
+
 .button {
-	display: block;
+	display: flex;
+	gap: 10px;
+	justify-content: center;
+    align-items: center;
 	border: none;
 	border-radius: var(--border-radius-a);
 	outline: none;
@@ -141,6 +164,7 @@ span {
 }
 
 .button.icon {
+	display: inline-block;
 	background: none;
 	padding: 0;
 	width: 1rem;
@@ -149,6 +173,10 @@ span {
 .button.icon:hover {
 	background: none;
 	color: var(--purple-a);
+}
+
+.button .icon {
+	font-size: 1rem;
 }
 
 input, button, a, .slider, .filter {
@@ -163,19 +191,21 @@ input, button, a, .slider, .filter {
 	flex-grow: 1;
 }
 
-a {
-	color: var(--purple-a);
-	text-decoration: none;
-	transition: color 200ms ease-in-out;
+.button-list {
+	display: flex;
+	justify-content: space-between;
 }
 
-a:hover {
-	text-decoration: underline;
+.button-list .button {
+	white-space: nowrap;
+	background-color: var(--background-color-c);
 }
 
-.hidden {
-	display: none;
+.button-list .button:hover {
+	background-color: var(--purple-a);
 }
+
+/* #endregion */
 
 /* #region INPUT */
 
@@ -635,11 +665,7 @@ header #search-bar {
 
 #posts-list .post .post-media-container .post-media.blur, #results-list .post .post-media-container .post-media.blur {
 	filter: blur(75px);
-	transition: 400ms ease-in-out;
-}
-
-#posts-list .post .post-media-container .post-media.blur.active, #results-list .post .post-media-container .post-media.blur.active {
-	filter: blur(0px);
+	-webkit-filter: blur(75px);
 }
 
 .post-description, .description, .post-subtitle, .comment-header, #options-list span p {
@@ -675,6 +701,10 @@ header #search-bar {
 	object-fit: contain;
 	border-radius: inherit;
 	overflow: hidden;
+	filter: blur(0px);
+	-webkit-filter: blur(0px);
+	transition: filter 200ms ease-in-out;
+	-webkit-transition: filter 200ms ease-in-out;
 }
 
 .post-footer {

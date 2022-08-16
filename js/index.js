@@ -4,7 +4,7 @@
  * 
  * Made by Prozilla
  */
-
+	
 //#region VARIABLES
 
 // Feed settings
@@ -49,7 +49,7 @@ let searchInput;
 let searchResultList;
 
 // Meta settings
-let feedId = 0;
+let currentFeedId = 0;
 const maxPosts = 10;
 let postCount = 0;
 let lastPostId;
@@ -202,7 +202,7 @@ async function renderPostMedia(post) {
 
 		if (post.media && post.media.reddit_video) {
 			source = post.media.reddit_video.fallback_url.substring(0, post.media.reddit_video.fallback_url.length - 16)
-		} else if (post.preview) {
+		} else if (post.preview && post.preview.reddit_video_preview) {
 			source = post.preview.reddit_video_preview.fallback_url;
 			isPreview = true;
 		}
@@ -460,15 +460,41 @@ function setURLParameter(key, value) {
 
 //#region SET UP
 
+function waitForElement(selector) {
+	return new Promise(resolve => {
+		if (document.querySelector(selector)) {
+			return resolve(document.querySelector(selector));
+		}
+
+		const observer = new MutationObserver(mutations => {
+			if (document.querySelector(selector)) {
+				resolve(document.querySelector(selector));
+				observer.disconnect();
+			}
+		});
+
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+	});
+}
+
 function setUpPage() {
+	loadHtml("header.html", document.body, true);
+
+	postsList = document.querySelector("#posts-list");
+
 	// Set element properties
 	if (feedName)
 		feedName.disabled = true;
+
 	allowSensitiveContent = localStorage.getItem("allowSensitiveContent") == "true" ? true : false;
+
 	if (hideSensitiveContentToggle)
 		hideSensitiveContentToggle.checked = !allowSensitiveContent;
 
-	if (getCurrentDirectory()[0] == "") {
+	if (getCurrentDirectory().length == 0) {
 		// Set up feed
 		if (loadCurrentFeed()) {
 			toggleFilter(currentFilterIndex);
@@ -511,41 +537,34 @@ function setUpPage() {
 			element = element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media");
 
 		if (element.classList.contains("blur"))
-			if (element.classList.contains("active")) {
-				element.classList.remove("active");
-			} else {
-				element.classList.add("active");
-			}
+			element.classList.remove("blur");
 	});
-	
-	const headerLoadInterval = setInterval(function() {
-		if (document.querySelector("header")) {
-			clearInterval(headerLoadInterval);
-		
-			if (localHosting)
-				document.querySelector("#logo").href = "/spreddit/";
 
-			searchInput = document.querySelector("#search-bar input");
-			searchResultList = document.querySelector("#search-bar #search-results");
-			header = document.querySelector("header");
+	waitForElement("header").then((headerElement) => {
+		header = headerElement;
 
-			// Set up input events
-			searchSubreddit();
-			searchInput.addEventListener("input", function (event) {
-				searchSubreddit(event.target.value);
-			});
+		if (localHosting)
+			header.querySelector("#logo").href = "/spreddit/";
 
-			// Set up search
-			searchInput.parentElement.addEventListener("click", function (event) {
-				searchSubreddit(searchInput.value);
-			});
+		searchInput = document.querySelector("#search-bar input");
+		searchResultList = document.querySelector("#search-bar #search-results");
 
-			searchInput.addEventListener("keydown", function(event) {
-				if (event.code == "Enter")
-					window.open(`search/?q=${searchInput.value}`, "_self");
-			});
-		}
-	}, 100);
+		// Set up input events
+		searchSubreddit();
+		searchInput.addEventListener("input", function (event) {
+			searchSubreddit(event.target.value);
+		});
+
+		// Set up search
+		searchInput.parentElement.addEventListener("click", function (event) {
+			searchSubreddit(searchInput.value);
+		});
+
+		searchInput.addEventListener("keydown", function(event) {
+			if (event.code == "Enter")
+				window.open(`search/?q=${searchInput.value}`, "_self");
+		});
+	})
 
 	if (getCurrentDirectory()[0] == "search") {
 		const searchLoadInterval = setInterval(function() {
@@ -567,8 +586,8 @@ setUpPage();
  * Adds a single post to the list of posts
  * @param {string} html - A post in html format
  */
-async function addPost(html) {
-	if (!html)
+async function addPost(html, feedId) {
+	if (!html || feedId != currentFeedId)
 		return;
 
 	const div = document.createElement("div");
@@ -625,10 +644,10 @@ async function renderPost(post, includeComments) {
 	if (includeComments)
 		tags.push("<button class=\"post-viewer-close button\" onclick=\"hidePostViewer()\"></button>");
 
-	// Feed ID
+		// Feed ID
 	let postFeedId = "";
 	if (!includeComments)
-		postFeedId = `data-feed-id="${feedId}"`;
+		postFeedId = `data-feed-id="${currentFeedId}"`;
 
 	return `<div ${postFeedId} data-post-id="${id}" class="post box">
 				<span class="post-header">
@@ -665,7 +684,7 @@ function renderUser(user) {
 	if (user.subreddit && user.subreddit.over_18)
 		tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
 
-	return `<div data-feed-id="${feedId}" data-user-id="${id}" class="post user box">
+	return `<div data-feed-id="${currentFeedId}" data-user-id="${id}" class="post user box">
 				<img class="avatar" src="${avatar}">
 				<span>
 					<p class="post-title">u/${name}</p>
@@ -690,7 +709,7 @@ function renderSubreddit(subreddit) {
 	if (subreddit.over18)
 		tags.push("<i title=\"Sensitive content\" class=\"red fas fa-exclamation-circle\"></i>");
 
-	return `<div data-feed-id="${feedId}" data-user-id="${id}" class="post subreddit box">
+	return `<div data-feed-id="${currentFeedId}" data-user-id="${id}" class="post subreddit box">
 				${banner}
 				<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${name}')"></button>
 				<span>
@@ -728,12 +747,12 @@ function renderPosts(forceOverwrite) {
 
 		saveCurrentFeed();
 
-		feedId++;
+		currentFeedId++;
 	}
 
 	if (!currentSubreddits.length) {
 		if (document.querySelector(".empty-feed-warning") == null)
-			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>");
+			addPost("<p class=\"empty-feed-warning\">There doesn't seem to be anything here.</p>", currentFeedId);
 		return;
 	}
 
@@ -745,11 +764,12 @@ function renderPosts(forceOverwrite) {
 			const posts = result.data.children;
 
 			if (!posts.length)
-				addPost("<p>There doesn't seem to be anything here.</p>");
+				addPost("<p>There doesn't seem to be anything here.</p>", currentFeedId);
 
 			let skipped = 0;
 			for (let i = 0; i < posts.length; i++) {
 				const post = posts[i].data;
+				const feedId = currentFeedId;
 
 				// Skip duplicate and sensitive posts
 				const duplicatePost = document.querySelector(`[data-post-id="${post.id}"]`);
@@ -758,13 +778,19 @@ function renderPosts(forceOverwrite) {
 					continue;
 				}
 
+				// Skip pinned posts
+				if (post.stickied) {
+					skipped++;
+					continue;
+				}
+
 				// Stop loading new posts if there's a new feed
-				if (postsList.children[i - skipped] == null || (postsList.children[i - skipped].id != "filter-list" && postsList.children[i - skipped].getAttribute("data-feed-id") != feedId))
+				if (postsList.children[i - skipped] == null || (postsList.children[i - skipped].id != "filter-list" && postsList.children[i - skipped].getAttribute("data-feed-id") != currentFeedId))
 					break;
 
-				addPost(await renderPost(post, false));
+				addPost(await renderPost(post, false), feedId);
 
-				console.log(post);
+				// console.log(post);
 
 				postCount++;
 				lastPostId = "t3_" + post.id;
@@ -1156,7 +1182,7 @@ function addVideoControls(post) {
  */
 function updateFeed() {
 	if (!arraysEqual(currentFeed.subreddits, currentSubreddits) || currentFeed.filterIndex != currentFilterIndex) {
-		if (getCurrentDirectory()[0] == "") {
+		if (getCurrentDirectory().length == 0) {
 			renderPosts();
 		} else if (getCurrentDirectory()[0] == "search") {
 			renderSearchResults();
