@@ -13,6 +13,7 @@ let currentSubreddits = [
 ];
 
 let currentFilterIndex;
+const defaultFilterIndex = 1;
 const filters = [
 	"best",
 	"hot",
@@ -501,7 +502,7 @@ function setUpPage() {
 		if (loadCurrentFeed()) {
 			toggleFilter(currentFilterIndex, false);
 		} else {
-			toggleFilter(1, false);
+			toggleFilter(defaultFilterIndex, false);
 		}
 
 		updateSubredditList();
@@ -1209,7 +1210,7 @@ function loadCurrentFeed() {
 	if (feed != null) {
 		currentFeed = feed;
 		currentSubreddits = currentFeed.subreddits.slice();
-		currentFilterIndex = currentFeed.filterIndex;
+		currentFilterIndex = currentFeed.filterIndex != null ? currentFeed.filterIndex : defaultFilterIndex;
 
 		return true;
 	} else {
