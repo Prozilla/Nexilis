@@ -1295,6 +1295,8 @@ function toggleSubreddit(subreddit) {
 function toggleFilter(index, allowNone) {
 	// Should return if the user presses the current filter button
 
+	console.log(index);
+
 	let none = true;
 	for (let i = 0; i < filterList.children.length; i++) {
 		const filterButton = filterList.children[i];
@@ -1313,7 +1315,9 @@ function toggleFilter(index, allowNone) {
 	}
 
 	currentFilterIndex = !none ? index : null;
-	
+
+	console.log(currentFilterIndex);
+
 	if (getCurrentDirectory()[0] == "search")
 		localStorage.setItem("searchFilter", currentFilterIndex);
 
