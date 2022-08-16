@@ -494,6 +494,8 @@ function setUpPage() {
 	if (hideSensitiveContentToggle)
 		hideSensitiveContentToggle.checked = !allowSensitiveContent;
 
+	console.log(getCurrentDirectory().length);
+
 	if (getCurrentDirectory().length == 0) {
 		// Set up feed
 		if (loadCurrentFeed()) {
