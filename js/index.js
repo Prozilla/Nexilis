@@ -499,9 +499,9 @@ function setUpPage() {
 	if (getCurrentDirectory().length == 0) {
 		// Set up feed
 		if (loadCurrentFeed()) {
-			toggleFilter(currentFilterIndex);
+			toggleFilter(currentFilterIndex, false);
 		} else {
-			toggleFilter(1);
+			toggleFilter(1, false);
 		}
 
 		updateSubredditList();
@@ -1313,8 +1313,10 @@ function toggleFilter(index, allowNone) {
 	}
 
 	currentFilterIndex = !none ? index : null;
+	
 	if (getCurrentDirectory()[0] == "search")
 		localStorage.setItem("searchFilter", currentFilterIndex);
+
 	updateFeed();
 }
 
