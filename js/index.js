@@ -495,8 +495,6 @@ function setUpPage() {
 	if (hideSensitiveContentToggle)
 		hideSensitiveContentToggle.checked = !allowSensitiveContent;
 
-	console.log(getCurrentDirectory().length);
-
 	if (getCurrentDirectory().length == 0) {
 		// Set up feed
 		if (loadCurrentFeed()) {
@@ -793,7 +791,7 @@ function renderPosts(forceOverwrite) {
 
 				addPost(await renderPost(post, false), feedId);
 
-				console.log(post);
+				// console.log(post);
 
 				postCount++;
 				lastPostId = "t3_" + post.id;
@@ -1296,8 +1294,6 @@ function toggleSubreddit(subreddit) {
 function toggleFilter(index, allowNone) {
 	// Should return if the user presses the current filter button
 
-	console.log(index);
-
 	let none = true;
 	for (let i = 0; i < filterList.children.length; i++) {
 		const filterButton = filterList.children[i];
@@ -1316,8 +1312,6 @@ function toggleFilter(index, allowNone) {
 	}
 
 	currentFilterIndex = !none ? index : null;
-
-	console.log(currentFilterIndex);
 
 	if (getCurrentDirectory()[0] == "search")
 		localStorage.setItem("searchFilter", currentFilterIndex);

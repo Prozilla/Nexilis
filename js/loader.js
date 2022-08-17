@@ -21,14 +21,14 @@ function loadHtml(directory, parentElement, before) {
 				const tempParent = document.createElement("div");
 				tempParent.innerHTML = html;
 
-				// Add all elements from HTML file to parentElement
-				for (let i = 0; i < tempParent.children.length; i++) {
+				// Add all elements from HTML file to parentElement (does not include comments)
+				Array.from(tempParent.children).forEach(element => {
 					if (before) {
-						parentElement.prepend(tempParent.children[i]);
+						parentElement.prepend(element);
 					} else {
-						parentElement.append(tempParent.children[i]);
+						parentElement.append(element);
 					}
-				}
+				});
 			})
 			.then(resolve("SUCCESS"));
 	});
@@ -44,8 +44,6 @@ function getCurrentDirectory() {
 
 	if (localHosting)
 		path.shift();
-
-	console.log(path, path.length);
 
 	return path;
 }
