@@ -1,12 +1,23 @@
 // True if the website is hosted locally
 let localHosting = window.location.pathname.startsWith("/spreddit/");
 
-// Add base url
-const baseElement = document.createElement("div");
-baseElement.innerHTML = `<base href="${localHosting ? "/spreddit/" : "/"}">`;
-document.head.appendChild(baseElement.firstChild);
-
 // Dynamic html
+function appendHtml(html, parentElement, before) {
+	const tempParent = document.createElement("div");
+	tempParent.innerHTML = html;
+
+	Array.from(tempParent.children).forEach(element => {
+		if (before) {
+			parentElement.prepend(element);
+		} else {
+			parentElement.append(element);
+		}
+	});
+}
+
+// Add base url
+appendHtml( `<base href="${localHosting ? "/spreddit/" : "/"}">`, document.head);
+
 function loadHtml(directory, parentElement, before) {
 	return new Promise((resolve, reject) => {
 		if (localHosting)
@@ -17,19 +28,7 @@ function loadHtml(directory, parentElement, before) {
 
 		fetch(directory)
 			.then(data => data.text())
-			.then((html) => {
-				const tempParent = document.createElement("div");
-				tempParent.innerHTML = html;
-
-				// Add all elements from HTML file to parentElement (does not include comments)
-				Array.from(tempParent.children).forEach(element => {
-					if (before) {
-						parentElement.prepend(element);
-					} else {
-						parentElement.append(element);
-					}
-				});
-			})
+			.then((html) => appendHtml(html, parentElement, before))
 			.then(resolve("SUCCESS"));
 	});
 }
@@ -50,26 +49,3 @@ function getCurrentDirectory() {
 
 // Load files
 loadHtml("head.html", document.head, false);
-
-// Load scripts
-function loadJs(directory, isModule, parentElement) {
-	return new Promise((resolve, reject) => {
-		const script = document.createElement("script");
-		script.src = directory;
-
-		if (isModule)
-			script.type = "module";
-
-		parentElement.appendChild(script);
-
-		script.addEventListener("load", () => {
-			resolve("SUCCESS");
-		});
-	});
-}
-
-loadJs("js/index.js", false, document.head);
-
-if (getCurrentDirectory()[0] == "search") {
-	loadJs("js/search.js", false, document.head);
-}

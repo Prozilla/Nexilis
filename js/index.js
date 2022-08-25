@@ -4,7 +4,7 @@
  * 
  * Made by Prozilla
  */
-	
+
 //#region VARIABLES
 
 // Feed settings
@@ -197,6 +197,9 @@ async function renderPostMedia(post) {
 		classes.push("blur");
 
 	let media;
+	let width;
+	let height;
+
 	if (post.media || (post.preview && post.preview.reddit_video_preview)) {
 		let source;
 		let isPreview = false;
@@ -210,6 +213,8 @@ async function renderPostMedia(post) {
 
 		if (source) {
 			if (!isPreview) {
+				// Video
+
 				// Fetch audio
 				const audioSource = source.replace(new RegExp("DASH_[0-9]+.mp4"), "DASH_audio.mp4");
 				const audioResponse = await fetch(audioSource);
@@ -225,22 +230,38 @@ async function renderPostMedia(post) {
 					${audio}
 				</video>`;
 			} else {
+				// Video
 				media = `<video class="${classes.length ? classes.join(" ") : classes[0]}" preload="auto" controls loop playsinline>
 					<source src=\"${source}" type="video/mp4">
 				</video>`;
 			}
 		} else if (post.media.oembed) {
+			// Images
 			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${post.media.oembed.thumbnail_url}" loading="lazy">`;
 		}
 	} else if (post.preview) {
 		if (post.preview.images[0].variants.gif) {
-			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${renderHTML(post.preview.images[0].variants.gif.source.url)}" loading="lazy">`;
+			// Gifs
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${renderHTML(post.preview.images[0].variants.gif.source.url)}">`;
 		} else {
-			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${renderHTML(post.preview.images[0].source.url)}" loading="lazy">`;
+			// Images
+			width = post.preview.images[0].source.width;
+			height = post.preview.images[0].source.height;
+
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${true ? renderHTML(post.preview.images[0].source.url) : ""}" width="${width}" height="${height}">`;
 		}
 	}
 
-	return media ? `<div class="post-media-container"><div class="post-media-inner-container">${media}</div></div>` : "";
+	return media ? `<div class="post-media-container">
+			<div class="post-media-inner-container">
+				${media}
+				<div class="spinner-container">
+					<svg viewBox="0 0 100 100">
+						<circle class="spinner" cx="50" cy="50" r="45"/>
+					</svg>
+				</div>
+			</div>
+		</div>` : "";
 }
 
 /**
@@ -528,9 +549,14 @@ function setUpPage() {
 		if (subredditOptions && !subredditOptions.contains(element) && !customFeedsList.contains(element) && customFeedsList.classList.contains("active"))
 			customFeedsList.classList.remove("active");
 
-		if (!postViewer.firstChild?.contains(element) && postViewer.classList.contains("active")) {
+		if ((postViewer.firstChild == null || !postViewer.firstChild.contains(element)) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (!element.classList.contains("blur") && postsList && postsList.contains(element) && element.nodeName != "VIDEO" && element.closest(".post") && !element.closest(".post").querySelector(".post-media-container .post-media-inner-container")?.contains(element) && element.closest(".post.user, .post.subreddit") == null) {
+		} else if (!element.classList.contains("blur") 
+				&& postsList && postsList.contains(element) 
+				&& element.nodeName != "VIDEO"
+				&& element.closest(".post") 
+				&& (element.closest(".post").querySelector(".post-media-container .post-media-inner-container") == null || !element.closest(".post").querySelector(".post-media-container .post-media-inner-container").contains(element)) 
+				&& element.closest(".post.user, .post.subreddit") == null) {
 			showPostViewer(element.closest(".post").getAttribute("data-post-id"));
 		}
 
@@ -569,7 +595,7 @@ function setUpPage() {
 
 	if (getCurrentDirectory()[0] == "search") {
 		const searchLoadInterval = setInterval(function() {
-			if (searchScriptLoaded) {
+			if (typeof searchScriptLoaded != "undefined") {
 				clearInterval(searchLoadInterval);
 				setUpSearch();
 			}
@@ -596,6 +622,18 @@ async function addPost(html, feedId) {
 
 	const post = postsList.appendChild(div.firstChild);
 	addVideoControls(post);
+	
+	const media = post.querySelector(".post-media");
+
+	if (media) {
+		media.onload = () => {
+			const spinner = post.querySelector(".spinner-container");
+
+			if (spinner) {
+				spinner.parentNode.removeChild(spinner);
+			}
+		}
+	}
 }
 
 /**
@@ -791,7 +829,7 @@ function renderPosts(forceOverwrite) {
 
 				addPost(await renderPost(post, false), feedId);
 
-				// console.log(post);
+				console.log(post);
 
 				postCount++;
 				lastPostId = "t3_" + post.id;

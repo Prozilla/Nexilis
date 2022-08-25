@@ -1,0 +1,26 @@
+{
+  "name": "spreddit",
+  "version": "1.0.0",
+  "description": "A Reddit clone by Prozilla",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.25.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-react-app": "^3.1.2",
+    "requirejs": "^2.3.6"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prozilla/Nexilis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Prozilla/Nexilis/issues"
+  },
+  "homepage": "https://github.com/Prozilla/Nexilis#readme"
+}
