@@ -36,6 +36,7 @@ const customFeedsList = document.querySelector("#feeds-list");
 
 // Input elements
 const hideSensitiveContentToggle = document.querySelector("#sensitive-content");
+const blurSensitiveContentToggle = document.querySelector("#sensitive-content-blur");
 
 const sideMenu = document.querySelector("#side-menu");
 const pageContent = document.querySelector("#page-content");
@@ -56,6 +57,7 @@ let postCount = 0;
 let lastPostId;
 let loadingNewPosts = false;
 let allowSensitiveContent = false;
+let blurSensitiveContent = true;
 
 // Fallback media
 const fallbackSubredditIcon = "media/Dragon.svg";
@@ -193,8 +195,12 @@ async function renderPostMedia(post) {
 		post = post.crosspost_parent_list[0];
 
 	const classes = ["post-media"];
-	if (post.spoiler || post.over_18)
-		classes.push("blur");
+
+	if (post.spoiler)
+		classes.push("spoiler");
+
+	if (post.over_18)
+		classes.push("sensitive-content");
 
 	let media;
 	let width;
@@ -248,12 +254,12 @@ async function renderPostMedia(post) {
 			width = post.preview.images[0].source.width;
 			height = post.preview.images[0].source.height;
 
-			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${true ? renderHTML(post.preview.images[0].source.url) : ""}" width="${width}" height="${height}">`;
+			media = `<img class="${classes.length ? classes.join(" ") : classes[0]}" src="${true ? renderHTML(post.preview.images[0].source.url) : ""}" width="${width}" height="${height}" loading="lazy">`;
 		}
 	}
 
 	return media ? `<div class="post-media-container">
-			<div class="post-media-inner-container">
+			<div class="post-media-inner-container" style="aspect-ratio: ${width} / ${height}">
 				${media}
 				<div class="spinner-container">
 					<svg viewBox="0 0 100 100">
@@ -551,7 +557,8 @@ function setUpPage() {
 
 		if ((postViewer.firstChild == null || !postViewer.firstChild.contains(element)) && postViewer.classList.contains("active")) {
 			hidePostViewer();
-		} else if (!element.classList.contains("blur") 
+		} else if (!element.classList.contains("spoiler") 
+				&& !element.classList.contains("sensitive-content")
 				&& postsList && postsList.contains(element) 
 				&& element.nodeName != "VIDEO"
 				&& element.closest(".post") 
@@ -563,8 +570,8 @@ function setUpPage() {
 		if (element.closest(".post") && element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media") != null)
 			element = element.closest(".post").querySelector(".post-media-container .post-media-inner-container .post-media");
 
-		if (element.classList.contains("blur"))
-			element.classList.remove("blur");
+		if (element.classList.contains("spoiler") || element.classList.contains("sensitive-content"))
+			element.classList.add("hide-blur");
 	});
 
 	waitForElement("header").then((headerElement) => {
@@ -940,16 +947,21 @@ class videoControls {
 					<i id="volume" class="button icon fa-solid fa-volume-high">
 						<div class="slider"></div>
 					</i>
+					<i id="toggle-fullscreen" class="button icon fa-solid fa-expand"></i>
 				</div>
 			</div>`;
 
 		this.video.parentElement.appendChild(controlsDiv.firstChild);
 
+		// Elements
+		this.post = this.video.parentElement.parentElement.parentElement;
 		this.audio = this.video.querySelector("audio");
 		this.videoControls = this.video.parentElement.querySelector("#video-controls");
 		this.audioSlider = this.videoControls.querySelector(".secondary-video-controls #volume .slider");
 		this.videoProgress = this.videoControls.querySelector(".secondary-video-controls #progress");
+		this.fullscreenToggle = this.video.parentElement.querySelector(".secondary-video-controls #toggle-fullscreen");
 
+		// Display audio
 		if (!this.audio) {
 			this.video.parentElement.classList.add("muted");
 			this.audioSlider.style.display = "none";
@@ -963,6 +975,7 @@ class videoControls {
 		this.playing = false;
 		this.manuallyPaused = false;
 		this.visible = isVisible(this.video);
+		this.fullscreen = false;
 
 		this.draggingVideoProgress = false;
 		this.draggingAudioSlider = false;
@@ -981,6 +994,7 @@ class videoControls {
 		this.video.parentElement.querySelector(".primary-video-controls").addEventListener("click", function(event) { that.startVideo(event); });
 		this.video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) { that.togglePause(); });
 		this.video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) { that.toggleVolume(event); });
+		this.fullscreenToggle.addEventListener("click", function(event) { that.toggleFullscreen(event); });
 
 		this.videoProgress.addEventListener("mousedown", function(event) { that.updateVideoProgress(event); });
 		this.videoProgress.addEventListener("touchstart", function(event) { that.updateVideoProgress(event); });
@@ -1144,6 +1158,16 @@ class videoControls {
 
 			if (this.audio && !this.hoveringAudioSlider && event.type == "mouseup")
 				this.audioSlider.classList.remove("active");
+		}
+	}
+
+	toggleFullscreen(event) {
+		this.fullscreen = !this.fullscreen;
+
+		if (this.fullscreen) {
+			this.post.classList.add("fullscreen");
+		} else {
+			this.post.classList.remove("fullscreen");
 		}
 	}
 
@@ -1531,9 +1555,22 @@ function hideFeedName() {
 //#region OPTIONS
 
 function toggleSensitiveContent() {
-	localStorage.setItem("allowSensitiveContent", !hideSensitiveContentToggle.checked);
 	allowSensitiveContent = !hideSensitiveContentToggle.checked;
+	localStorage.setItem("allowSensitiveContent", allowSensitiveContent);
 	renderPosts(true);
+}
+
+function toggleSensitiveContentBlur() {
+	blurSensitiveContent = blurSensitiveContentToggle.checked;
+	localStorage.setItem("blurSensitiveContent", blurSensitiveContent);
+
+	if (!blurSensitiveContent) {
+		postsList.classList.add("disable-sensitive-content-blur");
+	} else {
+		postsList.classList.remove("disable-sensitive-content-blur");
+	}
+
+	console.log(blurSensitiveContent);
 }
 
 //#endregion
