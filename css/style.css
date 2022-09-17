@@ -721,13 +721,14 @@ header #search-bar {
 	justify-content: center;
 	width: fit-content;
 	height: 100%;
+	aspect-ratio: inherit;
 	border-radius: inherit;
 	box-shadow: var(--box-shadow-c);
 	overflow: hidden;
 }
 
 .post-media {
-	max-width: 100%;
+	width: 100%;
 	height: 100%;
 	object-fit: contain;
 	border-radius: inherit;

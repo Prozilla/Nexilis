@@ -258,8 +258,8 @@ async function renderPostMedia(post) {
 		}
 	}
 
-	return media ? `<div class="post-media-container">
-			<div class="post-media-inner-container" style="aspect-ratio: ${width} / ${height}">
+	return media ? `<div class="post-media-container" style="aspect-ratio: ${width} / ${height}">
+			<div class="post-media-inner-container">
 				${media}
 				<div class="spinner-container">
 					<svg viewBox="0 0 100 100">
@@ -933,8 +933,9 @@ class videoControls {
 	constructor(video) {
 		const that = this;
 
-		this.video = video;
-		this.video.controls = false;
+		this.videoElement = video;
+		this.videoElement.controls = false;
+		this.videoElement.muted = true;
 
 		const controlsDiv = document.createElement("div");
 		controlsDiv.innerHTML = `<div class="video-controls" id="video-controls">
@@ -951,30 +952,32 @@ class videoControls {
 				</div>
 			</div>`;
 
-		this.video.parentElement.appendChild(controlsDiv.firstChild);
+		this.videoElement.parentElement.appendChild(controlsDiv.firstChild);
 
 		// Elements
-		this.post = this.video.parentElement.parentElement.parentElement;
-		this.audio = this.video.querySelector("audio");
-		this.videoControls = this.video.parentElement.querySelector("#video-controls");
+		this.post = this.videoElement.parentElement.parentElement.parentElement;
+		this.audioElement = this.videoElement.querySelector("audio");
+		this.videoControls = this.videoElement.parentElement.querySelector("#video-controls");
 		this.audioSlider = this.videoControls.querySelector(".secondary-video-controls #volume .slider");
 		this.videoProgress = this.videoControls.querySelector(".secondary-video-controls #progress");
-		this.fullscreenToggle = this.video.parentElement.querySelector(".secondary-video-controls #toggle-fullscreen");
+		this.fullscreenToggle = this.videoElement.parentElement.querySelector(".secondary-video-controls #toggle-fullscreen");
 
 		// Display audio
-		if (!this.audio) {
-			this.video.parentElement.classList.add("muted");
+		if (!this.audioElement) {
+			this.videoElement.parentElement.classList.add("muted");
 			this.audioSlider.style.display = "none";
 			this.audioSlider.parentElement.style.cursor = "auto";
 			this.audioSlider.parentElement.style.color = "inherit";
 		} else {
 			this.setVolume(100);
+			this.toggleVolume();
 		}
 
 		this.started = false;
 		this.playing = false;
+		this.audioPlaying = false;
 		this.manuallyPaused = false;
-		this.visible = isVisible(this.video);
+		this.visible = isVisible(this.videoElement);
 		this.fullscreen = false;
 
 		this.draggingVideoProgress = false;
@@ -983,17 +986,17 @@ class videoControls {
 		this.hoveringAudioSlider = false;
 		this.hoveringVideo = false;
 
-		this.video.addEventListener("contextmenu", function(event) {
+		this.videoElement.addEventListener("contextmenu", function(event) {
 			event.preventDefault();
 			event.stopPropagation();
 		});
 
-		this.video.parentElement.addEventListener("mouseenter", function(event) { that.toggleControls(event); });
-		this.video.parentElement.addEventListener("mouseleave", function(event) { that.toggleControls(event); });
+		this.videoElement.parentElement.addEventListener("mouseenter", function(event) { that.toggleControls(event); });
+		this.videoElement.parentElement.addEventListener("mouseleave", function(event) { that.toggleControls(event); });
 
-		this.video.parentElement.querySelector(".primary-video-controls").addEventListener("click", function(event) { that.startVideo(event); });
-		this.video.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) { that.togglePause(); });
-		this.video.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) { that.toggleVolume(event); });
+		this.videoElement.parentElement.querySelector(".primary-video-controls").addEventListener("click", function(event) { that.startVideo(); });
+		this.videoElement.parentElement.querySelector(".secondary-video-controls #pause").addEventListener("click", function(event) { that.togglePause(); });
+		this.videoElement.parentElement.querySelector(".secondary-video-controls #volume").addEventListener("click", function(event) { that.toggleVolume(event); });
 		this.fullscreenToggle.addEventListener("click", function(event) { that.toggleFullscreen(event); });
 
 		this.videoProgress.addEventListener("mousedown", function(event) { that.updateVideoProgress(event); });
@@ -1003,65 +1006,77 @@ class videoControls {
 		document.addEventListener("mouseup", function(event) { that.onMouseUp(event); });
 		document.addEventListener("scroll", function(event) { that.onScroll(event); });
 
-		if (this.audio) {
+		if (this.audioElement) {
 			this.audioSlider.parentElement.addEventListener("mouseenter", function(event) { that.updateAudioSlider(event); });
 			this.audioSlider.parentElement.addEventListener("mouseleave", function(event) { that.updateAudioSlider(event); });
 			this.audioSlider.addEventListener("mousedown", function(event) { that.updateAudioSlider(event); });
 		}
 
-		const height = this.video.offsetWidth;
+		const height = this.videoElement.offsetWidth;
 		// this.video.parentElement.style.width = height + "px";
 	}
 
-	startVideo(event) {
-		event.target.closest(".video-controls").classList.add("active");
+	startVideo() {
+		if (this.started)
+			return;
+
+		this.videoElement.parentElement.querySelector(".video-controls").classList.add("active");
 
 		this.progressUpdateInterval = null;
 		this.videoControlsHoverExitTimeout = null;
 		this.started = true;
 
-		const that = this;
-		this.video.onplay = function() {
-			that.onVideoPlay(that);
-		};
-		this.video.onpause = function() {
-			that.onVideoPause(that);
+		const video = this;
+
+		this.videoElement.onplay = () => {
+			video.onVideoPlay(video);
 		};
 
-		this.video.play();
+		this.videoElement.onpause = () => {
+			video.onVideoPause(video);
+		};
+
+		if (this.audioElement) {
+			this.audioElement.onplay = () => {
+				video.onAudioPlay();
+			}
+		}
+
+		this.videoElement.play();
 	}
 
 	onVideoPlay() {
-		if (this.audio) {
-			this.audio.currentTime = this.video.currentTime;
-			this.audio.play();
+		if (this.audioElement && !this.muted) {
+			this.audioElement.currentTime = this.videoElement.currentTime;
+			this.audioElement.play();
 		}
 
-		this.video.play();
+		this.videoElement.play();
 
 		// Keep audio in sync
-		if (this.audio)
+		if (this.audioElement) {
 			setInterval(() => {
-				if (Math.abs(this.video.currentTime - this.audio.currentTime) > 0.2)
-					this.audio.currentTime = this.video.currentTime;
+				if (Math.abs(this.videoElement.currentTime - this.audioElement.currentTime) > 0.2)
+					this.audioElement.currentTime = this.videoElement.currentTime;
 			}, 100);
+		}
 
 		this.playing = true;
 		this.manuallyPaused = false;
-		this.video.parentElement.classList.remove("paused");
+		this.videoElement.parentElement.classList.remove("paused");
 
 		this.progressUpdateInterval = setInterval(() => {
-			this.videoProgress.style.setProperty("--progress", (this.video.currentTime / this.video.duration) * 100);
+			this.videoProgress.style.setProperty("--progress", (this.videoElement.currentTime / this.videoElement.duration) * 100);
 		}, 0);
 	}
 
 	onVideoPause() {
-		if (this.audio)
-			this.audio.pause();
+		if (this.audioElement)
+			this.audioElement.pause();
 
 		if (!this.draggingVideoProgress)
 			this.playing = false;
-		this.video.parentElement.classList.add("paused");
+		this.videoElement.parentElement.classList.add("paused");
 
 		if (this.visible)
 			this.manuallyPaused = true;
@@ -1069,48 +1084,64 @@ class videoControls {
 		clearInterval(this.progressUpdateInterval);
 	}
 
+	onAudioPlay() {
+		this.audioPlaying = true;
+	}
+
 	togglePause() {
 		if (this.playing) {
-			this.video.pause();
+			this.videoElement.pause();
 		} else {
-			this.video.play();
+			this.videoElement.play();
 		}
 	}
 
 	setVideoTime(value) {
 		value = Math.min(Math.max(value, 0), 100);
 		this.videoProgress.style.setProperty("--progress", value);
-		this.video.currentTime = value / 100 * this.video.duration;
+		this.videoElement.currentTime = value / 100 * this.videoElement.duration;
 
-		if (this.audio)
-			this.audio.currentTime = this.video.currentTime;
+		if (this.audioElement)
+			this.audioElement.currentTime = this.videoElement.currentTime;
 	}
 
 	toggleVolume(event) {
-		if (!event.target.classList.contains("slider") && this.audio) {
+		if (!event || (!event.target.classList.contains("slider") && this.audioElement)) {
 			this.muted = !this.muted;
 
 			if (this.muted) {
-				this.video.parentElement.classList.add("muted");
+				this.videoElement.parentElement.classList.add("muted");
 			} else {
-				this.video.parentElement.classList.remove("muted");
+				this.videoElement.parentElement.classList.remove("muted");
+
+				if (!this.audioPlaying && this.playing) {
+					this.audioElement.currentTime = this.videoElement.currentTime;
+					this.audioElement.play();
+				}
 			}
 
-			this.audio.volume = this.muted ? 0 : this.volume / 100;
-			this.audioSlider.style.setProperty("--volume", this.audio.volume * 100);
+			this.audioElement.volume = this.muted ? 0 : this.volume / 100;
+			this.audioSlider.style.setProperty("--volume", this.audioElement.volume * 100);
 		}
 	}
 
 	setVolume(value) {
 		this.volume = Math.min(Math.max(value, 0), 100);
-		this.audio.volume = this.volume / 100;
+		this.audioElement.volume = this.volume / 100;
 		this.audioSlider.style.setProperty("--volume", this.volume);
 
 		if (this.volume > 0) {
-			this.video.parentElement.classList.remove("muted");
+			this.videoElement.parentElement.classList.remove("muted");
+			this.audioElement.muted = false;
 			this.muted = false;
+
+			if (!this.audioPlaying && this.playing) {
+				this.audioElement.currentTime = this.videoElement.currentTime;
+				this.audioElement.play();
+			}
 		} else {
-			this.video.parentElement.classList.add("muted");
+			this.videoElement.parentElement.classList.add("muted");
+			this.audioElement.muted = true;
 			this.muted = true;
 		}
 	}
@@ -1120,7 +1151,7 @@ class videoControls {
 			this.draggingVideoProgress = true;
 			setTimeout(() => {
 				if (this.draggingVideoProgress)
-					this.video.pause();
+					this.videoElement.pause();
 			}, 100);
 		} else if (event.type == "mousemove" && this.draggingVideoProgress) {
 			const position = Math.round((event.clientX - this.videoProgress.getBoundingClientRect().left) / this.videoProgress.offsetWidth * 100);
@@ -1130,7 +1161,7 @@ class videoControls {
 			this.setVideoTime(position);
 
 			if (position < 100 && this.playing)
-				this.video.play();
+				this.videoElement.play();
 		}
 	}
 
@@ -1156,7 +1187,7 @@ class videoControls {
 				this.setVolume(position);
 			}
 
-			if (this.audio && !this.hoveringAudioSlider && event.type == "mouseup")
+			if (this.audioElement && !this.hoveringAudioSlider && event.type == "mouseup")
 				this.audioSlider.classList.remove("active");
 		}
 	}
@@ -1189,17 +1220,20 @@ class videoControls {
 		this.draggingAudioSlider = false;
 	}
 
-	onScroll(event) {
-		this.visible = isVisible(this.video);
+	onScroll() {
+		this.visible = isVisible(this.videoElement);
 
 		if (this.started) {
 			if (this.visible && !this.playing && !this.manuallyPaused) {
-				this.video.play();
-				console.log("playing");
+				this.videoElement.play();
 			} else if (!this.visible && this.playing && !this.manuallyPaused) {
-				this.video.pause();
-				console.log("pausing");
+				this.videoElement.pause();
 			}
+		} else {
+			const blurred = this.videoElement.classList.contains("spoiler") || (this.videoElement.classList.contains("sensitive-content") && !postsList.classList.contains("disable-sensitive-content-blur"))
+
+			if (!blurred)
+				this.startVideo();
 		}
 	}
 
