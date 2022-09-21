@@ -1196,9 +1196,9 @@ class videoControls {
 		this.fullscreen = !this.fullscreen;
 
 		if (this.fullscreen) {
-			this.post.classList.add("fullscreen");
+			document.body.classList.add("fullscreen");
 		} else {
-			this.post.classList.remove("fullscreen");
+			document.body.classList.remove("fullscreen");
 		}
 	}
 
@@ -1532,9 +1532,10 @@ function isVisible(element) {
 			const div = document.createElement("div");
 			div.appendChild(searchButton);
 
-			searchResultList.innerHTML = searchResults.map(element => 
-				`<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`
-			).join("") + renderHTML(div.innerHTML);
+			searchResultList.innerHTML = searchResults.map((element) => {
+				console.log(element);
+				return `<p class="search-result">${element.data.display_name_prefixed}<button class="subreddit-toggle-button button" onclick="toggleSubreddit('${element.data.display_name}')"></button></p>`;
+			}).join("") + renderHTML(div.innerHTML);
 		});
 
 		searchResultList.style.display = null;
