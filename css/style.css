@@ -29,6 +29,7 @@
 	--text-padding: 5px 15px;
 	--background-padding: 16px;
 	--header-height: 50px;
+	--viewport-height: 100vh;
 }
 
 html {
@@ -974,7 +975,7 @@ body.fullscreen #page-content {
 	top: 0;
 	left: 0;
 	width: 100vw;
-	height: 100vh;
+	height: var(--viewport-height);
 	margin-top: 0;
 	background-color: var(--background-color-a);
 	overflow-y: scroll;
@@ -1002,7 +1003,7 @@ body.fullscreen #filter-list {
 
 body.fullscreen .post {
 	width: 100vw;
-	height: 100vh;
+	height: var(--viewport-height);
 	scroll-snap-align: start;
 	background-color: var(--background-color-a);
 }

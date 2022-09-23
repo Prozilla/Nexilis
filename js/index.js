@@ -539,6 +539,10 @@ function setUpPage() {
 			saveFeed();
 	});
 
+	window.addEventListener("resize", () => {
+		resize();
+	});
+
 	// Set up click events
 	document.addEventListener("click", function(event) {
 		let element = event.target;
@@ -1606,6 +1610,15 @@ function toggleSensitiveContentBlur() {
 	}
 
 	console.log(blurSensitiveContent);
+}
+
+//#endregion
+
+// #region VIEWPORT
+
+function resize() {
+	const viewportHeight = window.innerHeight;
+	document.documentElement.style.setProperty("--viewport-height", viewportHeight + "px");
 }
 
 //#endregion
